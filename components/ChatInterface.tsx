@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { getSeasonalInfo } from '@/lib/seasonal'
 import { translateWeatherCondition } from '@/lib/weather'
 import SuggestedQuestions from './SuggestedQuestions'
+import ProductRecommendation from './ProductRecommendation'
 import type { Product } from '@/lib/products'
 import type { ChatMessage } from '@/services/chat/service'
 import type { WeatherData } from '@/types'
@@ -197,34 +198,8 @@ export default function ChatInterface({
             </div>
             
             {!message.isUser && message.products && message.products.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                {message.products.map((product) => (
-                  <a
-                    key={product.id}
-                    href={product.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
-                  >
-                    <div className="aspect-w-1 aspect-h-1 mb-4">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-40 object-cover rounded"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.src = '/images/placeholder.jpg'
-                        }}
-                      />
-                    </div>
-                    <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{product.description}</p>
-                    <div className="mt-2 flex justify-between items-center">
-                      <span className="font-bold text-green-600">{product.price}€</span>
-                      <span className="text-sm text-gray-500">{product.brand}</span>
-                    </div>
-                  </a>
-                ))}
+              <div className="mt-4">
+                <ProductRecommendation products={message.products} />
               </div>
             )}
           </div>

@@ -17,3 +17,13 @@ body {
     )
     rgb(var(--background-start-rgb));
 } 
+
+@layer base {
+  html {
+    font-size: 13px; /* Base font size */
+  }
+  
+  body {
+    font-size: 1.1rem; /* Slightly larger than base */
+  }
+}

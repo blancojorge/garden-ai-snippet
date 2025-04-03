@@ -21,6 +21,13 @@ module.exports = {
           900: '#14532d',
         },
       },
+      fontSize: {
+        'base': '0.8rem',     // Adjust base font size
+        'sm': '0.65rem',      // Smaller text
+        'lg': '0.85rem',      // Larger text
+        'xl': '1.0rem',       // Extra large text
+        '2xl': '1.0rem',     // 2X large text
+      },
     },
   },
   plugins: [],
