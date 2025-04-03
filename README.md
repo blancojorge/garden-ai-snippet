@@ -1,1 +1,0 @@
-# garden-ai-snippet
