@@ -4,9 +4,12 @@ import { translateWeatherCondition } from '@/lib/weather'
 import SuggestedQuestions from './SuggestedQuestions'
 import ProductRecommendation from './ProductRecommendation'
 import type { Product } from '@/lib/products'
-import type { ChatMessage } from '@/services/chat/service'
+import type { ChatMessage, ChatRequest, ChatResponse } from '@/types/chat'
 import type { WeatherData } from '@/types'
 import { handleChatRequest } from '@/services/chat/service'
+import { gardenService } from '@/services/garden/service'
+import { ConversationState } from '@/types/garden'
+import { ChatMessages } from './ChatMessages'
 
 interface ChatInterfaceProps {
   messages: ChatMessage[]
@@ -30,6 +33,11 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const seasonalInfo = getSeasonalInfo(location, month)
   const [hasShownWelcome, setHasShownWelcome] = useState(false)
+  const [conversationState, setConversationState] = useState<ConversationState>({
+    currentCategory: null,
+    currentSpecification: null,
+    answeredSpecifications: {}
+  })
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -126,57 +134,110 @@ export default function ChatInterface({
     }
   }
 
+  const createMessage = (role: 'user' | 'assistant', content: string, products?: Product[]): ChatMessage => ({
+    id: Date.now().toString(),
+    role,
+    content,
+    products
+  })
+
   const handleQuestionClick = async (question: string) => {
+    setIsLoading(true)
     try {
-      console.log('=== Question Click ===')
-      console.log('Selected question:', question)
-      
-      setIsLoading(true)
-      setInput(question)
-      
-      // Add user message
-      const userMessage: ChatMessage = {
-        id: Date.now().toString(),
-        text: question,
-        isUser: true
-      }
-      setMessages(prev => [...prev, userMessage])
-      
-      console.log('Sending question to chat service...')
-      const response = await handleChatRequest({
-        message: question,
-        location: location || '',
-        month,
-        weather
-      })
-      
-      console.log('Chat service response:', response)
-      
-      // Add bot message with products if available
-      const botMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        text: response.text,
-        isUser: false,
-        products: response.products
-      }
-      setMessages(prev => [...prev, botMessage])
-    } catch (error: unknown) {
-      console.error('=== Error in handleQuestionClick ===')
-      if (error instanceof Error) {
-        console.error('Error type:', error.constructor.name)
-        console.error('Error message:', error.message)
-        console.error('Error stack:', error.stack)
+      // Add user question to chat
+      setMessages(prev => [...prev, createMessage('user', question)])
+
+      // Get suggested questions from garden service
+      const suggestedQuestions = gardenService.getSuggestedQuestions()
+      const matchingQuestion = suggestedQuestions.find(q => q.text === question)
+
+      if (matchingQuestion) {
+        // If we have a matching question, get its related category
+        const categoryId = matchingQuestion.relatedProductCategories[0]
+        setConversationState(prev => ({
+          ...prev,
+          currentCategory: categoryId
+        }))
+
+        // Get specifications for this category
+        const specifications = gardenService.getSpecificationsByCategory(categoryId)
+        if (specifications.length > 0) {
+          // Ask for the first specification
+          const firstSpec = specifications[0]
+          setConversationState(prev => ({
+            ...prev,
+            currentSpecification: firstSpec.id
+          }))
+          
+          // Add AI message asking for specification
+          setMessages(prev => [...prev, createMessage('assistant', `Para recomendarte el mejor producto, necesito saber: ${firstSpec.name}`)])
+        } else {
+          // If no specifications, proceed with AI response
+          const request: ChatRequest = { message: question }
+          const response = await handleChatRequest(request)
+          setMessages(prev => [...prev, createMessage('assistant', response.content, response.products)])
+        }
       } else {
-        console.error('Unknown error:', error)
+        // If no matching question, proceed with AI response
+        const request: ChatRequest = { message: question }
+        const response = await handleChatRequest(request)
+        setMessages(prev => [...prev, createMessage('assistant', response.content, response.products)])
       }
+    } catch (error) {
+      console.error('Error in handleQuestionClick:', error)
+      setMessages(prev => [...prev, createMessage('assistant', 'Lo siento, ha ocurrido un error. Por favor, intenta de nuevo.')])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSpecificationAnswer = async (answer: string) => {
+    if (!conversationState.currentSpecification) return
+
+    setIsLoading(true)
+    try {
+      // Add user answer to chat
+      setMessages(prev => [...prev, createMessage('user', answer)])
+
+      // Update conversation state with the answer
+      setConversationState(prev => ({
+        ...prev,
+        answeredSpecifications: {
+          ...prev.answeredSpecifications,
+          [prev.currentSpecification!]: answer
+        }
+      }))
+
+      // Get next specification
+      const nextSpec = gardenService.getNextSpecification(conversationState)
       
-      // Add error message
-      const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        text: 'Lo siento, ha ocurrido un error al procesar tu pregunta. Por favor, inténtalo de nuevo.',
-        isUser: false
+      if (nextSpec) {
+        // If there's another specification, ask for it
+        setConversationState(prev => ({
+          ...prev,
+          currentSpecification: nextSpec.id
+        }))
+        
+        setMessages(prev => [...prev, createMessage('assistant', `Gracias. Ahora necesito saber: ${nextSpec.name}`)])
+      } else {
+        // If no more specifications, get AI response with all gathered information
+        const request: ChatRequest = {
+          message: `Basado en las siguientes especificaciones: ${JSON.stringify(conversationState.answeredSpecifications)}, ¿qué producto me recomiendas?`,
+          specifications: conversationState.answeredSpecifications
+        }
+        const response = await handleChatRequest(request)
+        setMessages(prev => [...prev, createMessage('assistant', response.content, response.products)])
+        
+        // Reset conversation state
+        setConversationState({
+          currentCategory: null,
+          currentSpecification: null,
+          answeredSpecifications: {}
+        })
       }
-      setMessages(prev => [...prev, errorMessage])
+    } catch (error) {
+      console.error('Error in handleSpecificationAnswer:', error)
+      setMessages(prev => [...prev, createMessage('assistant', 'Lo siento, ha ocurrido un error. Por favor, intenta de nuevo.')])
     } finally {
       setIsLoading(false)
     }
@@ -185,45 +246,7 @@ export default function ChatInterface({
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <div key={index} className="space-y-4">
-            <div className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-lg p-3 ${
-                message.isUser 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-gray-100 text-gray-800'
-              }`}>
-                {message.text.split('\n').map((line, i) => (
-                  <p key={i} className="mb-2">
-                    {line.split(/(\[.*?\]\(.*?\))/g).map((part, j) => {
-                      const match = part.match(/\[(.*?)\]\((.*?)\)/)
-                      if (match) {
-                        return (
-                          <a
-                            key={j}
-                            href={match[2]}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`${message.isUser ? 'text-white underline' : 'text-blue-600 hover:text-blue-800 underline'}`}
-                          >
-                            {match[1]}
-                          </a>
-                        )
-                      }
-                      return part
-                    })}
-                  </p>
-                ))}
-              </div>
-            </div>
-            
-            {!message.isUser && message.products && message.products.length > 0 && (
-              <div className="mt-4">
-                <ProductRecommendation products={message.products} />
-              </div>
-            )}
-          </div>
-        ))}
+        <ChatMessages messages={messages} />
         
         {isLoading && (
           <div className="flex justify-start">

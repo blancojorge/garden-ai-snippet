@@ -9,6 +9,9 @@ interface AIRequest {
   location: string
   month: number
   weather?: WeatherData
+  specifications?: {
+    [key: string]: string
+  }
 }
 
 interface AIResponse {
@@ -43,6 +46,7 @@ export async function handleAIRequest(request: AIRequest): Promise<AIResponse> {
     console.log('Location:', request.location)
     console.log('Month:', request.month)
     console.log('Weather:', request.weather)
+    console.log('Specifications:', request.specifications)
 
     // Format the catalog for the prompt
     const catalogInfo = (catalog as any[]).map(item => ({
@@ -69,6 +73,9 @@ ${request.weather ? `
 - Temperatura: ${request.weather.temperature}°C
 - Humedad: ${request.weather.humidity}%
 - Viento: ${request.weather.windSpeed} km/h` : ''}
+${request.specifications ? `
+Especificaciones del usuario:
+${Object.entries(request.specifications).map(([key, value]) => `- ${key}: ${value}`).join('\n')}` : ''}
 
 Catálogo completo de productos de Bauhaus:
 ${catalogInfo.map(product => 
