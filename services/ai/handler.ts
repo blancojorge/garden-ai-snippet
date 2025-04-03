@@ -105,12 +105,17 @@ IMPORTANTE: Cuando recomiendes productos, usa el formato markdown para los enlac
           { role: 'user', content: prompt }
         ],
         temperature: AI_CONFIG.temperature,
-        max_tokens: AI_CONFIG.maxTokens
+        maxTokens: AI_CONFIG.maxTokens
       })
     })
 
     if (!response.ok) {
-      throw new Error(`Together AI API error: ${response.statusText}`)
+      const errorData = await response.json().catch(() => null)
+      console.error('\n=== Together AI API Error Details ===')
+      console.error('Status:', response.status)
+      console.error('Status Text:', response.statusText)
+      console.error('Error Response:', errorData)
+      throw new Error(`Together AI API error: ${response.statusText} - ${JSON.stringify(errorData)}`)
     }
 
     const data = await response.json()

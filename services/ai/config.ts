@@ -1,6 +1,8 @@
 export const AI_CONFIG = {
   provider: 'together',
-  model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+  // model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+  //model: 'mistralai/Mixtral-8x7B-Instruct-v0.1',
+  model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
   baseURL: 'https://api.together.xyz/v1',
   temperature: 0.7,
   maxTokens: 500
