@@ -1,7 +1,8 @@
 import { AI_CONFIG, SYSTEM_PROMPT } from './config'
-import { getProductsByCategory, getAllCategories } from '@/lib/products'
+import { getProductsByCategory, getAllCategories, getProductById } from '@/lib/products'
 import catalog from '@/Bauhaus.catalog_maquinaria.json'
 import { WeatherData } from '@/types'
+import { Product } from '@/lib/products'
 
 interface AIRequest {
   message: string
@@ -14,6 +15,25 @@ interface AIResponse {
   text: string
   products: any[]
   explanation: string
+}
+
+function extractProductIdsFromMarkdown(text: string): string[] {
+  // Match markdown links [text](url)
+  const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+  const productIds: string[] = []
+  let match
+
+  while ((match = markdownLinkRegex.exec(text)) !== null) {
+    const url = match[2]
+    // Extract product ID from Bauhaus URL
+    const productIdMatch = url.match(/\/p\/(\d+)/)
+    if (productIdMatch && productIdMatch[1]) {
+      productIds.push(productIdMatch[1])
+    }
+  }
+
+  console.log('Extracted product IDs:', productIds)
+  return productIds
 }
 
 export async function handleAIRequest(request: AIRequest): Promise<AIResponse> {
@@ -65,7 +85,9 @@ ${catalogInfo.map(product =>
    URL: ${product.url}`
 ).join('\n\n')}
 
-Pregunta del usuario: ${request.message}`
+Pregunta del usuario: ${request.message}
+
+IMPORTANTE: Cuando recomiendes productos, usa el formato markdown para los enlaces: [nombre del producto](url). Por ejemplo: [Cortacésped eléctrico GC-EM 1032](https://www.bauhaus.es/cortacespedes-electricos/einhell-cortacespede-electrico-gc-em-1032/p/28671824)`
 
     console.log('\n=== Sending Request to Together AI ===')
     console.log('\n=== Prompt ===')
@@ -96,12 +118,12 @@ Pregunta del usuario: ${request.message}`
     console.log('\n=== AI Response ===')
     console.log(aiResponse)
 
-    // Extract categories from the response
-    const categories = extractProductCategories(aiResponse)
-    console.log('Extracted categories:', categories)
+    // Extract product IDs from markdown links
+    const productIds = extractProductIdsFromMarkdown(aiResponse)
+    console.log('Extracted product IDs:', productIds)
 
-    // Get products for the extracted categories
-    const products = categories.flatMap(category => getProductsByCategory(category))
+    // Get products by their IDs
+    const products = productIds.map(id => getProductById(id)).filter(Boolean) as Product[]
     console.log('\n=== Products from AI Handler ===')
     console.log('Number of products:', products.length)
     console.log('First product sample:', products[0] ? {
