@@ -18,6 +18,28 @@ export interface SeasonalData {
 
 export const SEASONAL_DATA: SeasonalData = {
   'Andalucía': {
+    0: { // March
+      season: 'Primavera',
+      tasks: [
+        'Preparar el suelo para la siembra',
+        'Plantar hortalizas de primavera',
+        'Podar árboles frutales',
+        'Controlar plagas y enfermedades'
+      ],
+      recommendedProducts: [
+        'Cortacésped eléctrico',
+        'Motosierra de poda',
+        'Pulverizador de mochila'
+      ],
+      suggestedQuestions: {
+        productQuestions: [
+          '¿Qué cortacésped eléctrico me recomiendas para un jardín de 200m²?',
+          '¿Qué motosierra es más adecuada para podar árboles frutales?',
+          '¿Qué pulverizador necesito para tratar plagas en mi huerto?'
+        ],
+        openQuestion: '¿Qué otras tareas de jardinería debo realizar en primavera?'
+      }
+    },
     'spring': {
       season: 'primavera',
       tasks: [
@@ -204,11 +226,144 @@ export const SEASONAL_DATA: SeasonalData = {
         openQuestion: '¿Qué cuidados necesita mi jardín en invierno?'
       }
     }
+  },
+  'Galicia': {
+    'spring': {
+      season: 'primavera',
+      tasks: [
+        'Preparar el suelo para la siembra',
+        'Plantar hortalizas de primavera',
+        'Podar árboles frutales',
+        'Controlar la humedad del suelo',
+        'Proteger plantas de las lluvias'
+      ],
+      recommendedProducts: [
+        'Cortacésped eléctrico',
+        'Motosierra de poda',
+        'Pulverizador de mochila',
+        'Sistema de drenaje'
+      ],
+      suggestedQuestions: {
+        productQuestions: [
+          '¿Qué cortacésped eléctrico me recomiendas para un jardín húmedo?',
+          '¿Qué motosierra es más adecuada para podar en clima húmedo?',
+          '¿Qué sistema de drenaje necesito para mi jardín?'
+        ],
+        openQuestion: '¿Qué tareas de jardinería debo realizar esta primavera en Galicia?'
+      }
+    },
+    'summer': {
+      season: 'verano',
+      tasks: [
+        'Mantener el riego adecuado',
+        'Controlar la humedad del suelo',
+        'Proteger plantas de las lluvias intensas',
+        'Cortar el césped regularmente',
+        'Controlar plagas y enfermedades'
+      ],
+      recommendedProducts: [
+        'Sistema de riego automático',
+        'Cortacésped profesional',
+        'Pulverizador de presión',
+        'Kit de protección contra lluvia'
+      ],
+      suggestedQuestions: {
+        productQuestions: [
+          '¿Qué sistema de riego es mejor para clima húmedo?',
+          '¿Qué cortacésped profesional me recomiendas para césped húmedo?',
+          '¿Qué protección necesito para las lluvias intensas?'
+        ],
+        openQuestion: '¿Cómo mantener mi jardín en verano en Galicia?'
+      }
+    },
+    'autumn': {
+      season: 'otoño',
+      tasks: [
+        'Limpiar hojas caídas',
+        'Preparar el suelo para el invierno',
+        'Plantar bulbos de primavera',
+        'Proteger plantas sensibles',
+        'Controlar la humedad del suelo'
+      ],
+      recommendedProducts: [
+        'Soplador de hojas',
+        'Kit de herramientas de jardín',
+        'Cubiertas para plantas',
+        'Sistema de drenaje'
+      ],
+      suggestedQuestions: {
+        productQuestions: [
+          '¿Qué soplador me recomiendas para hojas húmedas?',
+          '¿Qué sistema de drenaje necesito para el otoño?',
+          '¿Cómo proteger mis plantas de la humedad excesiva?'
+        ],
+        openQuestion: '¿Qué preparativos necesito para el invierno en Galicia?'
+      }
+    },
+    'winter': {
+      season: 'invierno',
+      tasks: [
+        'Proteger plantas del frío y la humedad',
+        'Mantener herramientas en buen estado',
+        'Controlar el drenaje del suelo',
+        'Realizar podas de mantenimiento',
+        'Planificar la próxima temporada'
+      ],
+      recommendedProducts: [
+        'Cubiertas para plantas',
+        'Kit de mantenimiento de herramientas',
+        'Invernadero portátil',
+        'Sistema de drenaje'
+      ],
+      suggestedQuestions: {
+        productQuestions: [
+          '¿Qué protección necesito para el clima gallego?',
+          '¿Qué sistema de drenaje es mejor para invierno?',
+          '¿Cómo mantener mis herramientas en clima húmedo?'
+        ],
+        openQuestion: '¿Qué cuidados necesita mi jardín en invierno en Galicia?'
+      }
+    }
   }
 }
 
-export function getSeasonalInfo(region: string, month: number): SeasonalInfo {
-  const regionInfo = SEASONAL_DATA[region] || SEASONAL_DATA['Madrid']
+export function getSeasonalInfo(region: string | null | undefined, month: number): SeasonalInfo {
+  // Default seasonal info for unknown regions
+  const defaultInfo: SeasonalInfo = {
+    season: 'Desconocida',
+    tasks: [
+      'Mantener el jardín limpio y ordenado',
+      'Regar según las necesidades de las plantas',
+      'Controlar plagas y enfermedades',
+      'Realizar podas de mantenimiento'
+    ],
+    recommendedProducts: [
+      'Kit básico de herramientas de jardín',
+      'Cortacésped eléctrico',
+      'Pulverizador de mochila',
+      'Sistema de riego básico'
+    ],
+    suggestedQuestions: {
+      productQuestions: [
+        '¿Qué herramientas básicas necesito para mi jardín?',
+        '¿Qué cortacésped me recomiendas?',
+        '¿Qué sistema de riego es más adecuado?'
+      ],
+      openQuestion: '¿En qué puedo ayudarte con tu jardín?'
+    }
+  }
+
+  // Return default info if region is not provided
+  if (!region) {
+    console.warn('No region provided, using default seasonal info')
+    return defaultInfo
+  }
+
+  const regionInfo = SEASONAL_DATA[region]
+  if (!regionInfo) {
+    console.warn(`No seasonal data found for region: ${region}, using default info`)
+    return defaultInfo
+  }
   
   let season: string
   if (month >= 3 && month <= 5) season = 'spring'
@@ -216,5 +371,5 @@ export function getSeasonalInfo(region: string, month: number): SeasonalInfo {
   else if (month >= 9 && month <= 11) season = 'autumn'
   else season = 'winter'
   
-  return regionInfo[season]
+  return regionInfo[season] || defaultInfo
 } 

@@ -1,8 +1,12 @@
 import React from 'react'
 import './globals.css'
-import { Inter } from 'next/font/google'
+import { Noto_Sans } from 'next/font/google'
 
-const inter = Inter({ subsets: ['latin'] })
+const notoSans = Noto_Sans({ 
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+})
 
 export const metadata = {
   title: 'AI Garden Machinery Advisor',
@@ -16,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={inter.className}>
+      <body className={notoSans.className}>
         <main className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
           {children}
         </main>

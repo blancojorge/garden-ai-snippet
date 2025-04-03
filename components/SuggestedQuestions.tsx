@@ -1,3 +1,4 @@
+import React from 'react'
 import type { SeasonalInfo } from '@/lib/seasonal'
 
 interface SuggestedQuestionsProps {
@@ -5,27 +6,34 @@ interface SuggestedQuestionsProps {
   onQuestionClick: (question: string) => void
 }
 
-export default function SuggestedQuestions({ seasonalInfo, onQuestionClick }: SuggestedQuestionsProps) {
+export default function SuggestedQuestions({ 
+  seasonalInfo, 
+  onQuestionClick 
+}: SuggestedQuestionsProps) {
+  const defaultQuestions = [
+    '¿Necesitas un cortacésped?',
+    '¿Ayuda para elegir una desbrozadora?',
+    '¿Alguna otra duda?'
+  ]
+
+  const questions = seasonalInfo.suggestedQuestions.productQuestions.length > 0 
+    ? seasonalInfo.suggestedQuestions.productQuestions 
+    : defaultQuestions
+
   return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Preguntas sugeridas</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {seasonalInfo.suggestedQuestions.productQuestions.map((question, index) => (
+    <div className="space-y-2">
+      <div className="text-sm text-gray-600 mb-2">Preguntas sugeridas:</div>
+      <div className="grid grid-cols-1 gap-2">
+        {questions.map((question: string, index: number) => (
           <button
             key={index}
             onClick={() => onQuestionClick(question)}
-            className="p-4 bg-green-50 hover:bg-green-100 rounded-lg text-left transition-colors"
+            className="w-full text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
           >
-            <p className="text-green-800">{question}</p>
+            {question}
           </button>
         ))}
       </div>
-      <button
-        onClick={() => onQuestionClick(seasonalInfo.suggestedQuestions.openQuestion)}
-        className="w-full p-4 bg-green-50 hover:bg-green-100 rounded-lg text-left transition-colors"
-      >
-        <p className="text-green-800">{seasonalInfo.suggestedQuestions.openQuestion}</p>
-      </button>
     </div>
   )
 } 
