@@ -18,12 +18,16 @@ export interface Task {
   description: string;
   seasonId: string;
   regionId: string;
+  relatedSeasons: string[];
+  relatedRegions: string[];
+  requiredTools: string[];
 }
 
 export interface SuggestedQuestion {
   id: string;
   text: string;
   categoryId?: string;
+  relatedProductCategories: string[];
 }
 
 export interface ProductCategory {

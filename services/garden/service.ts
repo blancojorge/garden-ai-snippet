@@ -1,4 +1,4 @@
-import { gardenData } from '@/data/garden'
+import { gardenData } from '../../data/garden'
 import { 
   GardenData, 
   Region, 
@@ -9,7 +9,7 @@ import {
   Specification,
   ConversationState,
   Product
-} from '@/types/garden'
+} from '../../types/garden'
 
 class GardenService {
   private data: GardenData

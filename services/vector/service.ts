@@ -1,13 +1,26 @@
-import { Product } from '@/types/garden'
+import { Product } from '../../types/garden'
 import { createClient } from '@supabase/supabase-js'
+import dotenv from 'dotenv'
+import path from 'path'
+
+// Load environment variables if not already loaded
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  const envPath = path.resolve(process.cwd(), '.env.local')
+  dotenv.config({ path: envPath })
+}
 
 // Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 // Configuration
-const EMBEDDING_MODEL = 'togethercomputer/m2-bert-80M-8k-base' // Free model
+const EMBEDDING_MODEL = 'togethercomputer/m2-bert-80M-2k-retrieval' // Free retrieval-optimized model
 const BATCH_SIZE = 10 // Number of products to process in each batch
 const CACHE_TTL = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 const TOKEN_COST_PER_MILLION = 0.01 // $0.01 per 1M tokens
@@ -77,7 +90,8 @@ export class VectorService {
       })
 
       if (!response.ok) {
-        throw new Error(`Together API error: ${response.statusText}`)
+        const errorText = await response.text()
+        throw new Error(`Together API error: ${response.statusText}. ${errorText}`)
       }
 
       const data = await response.json()
@@ -98,17 +112,95 @@ export class VectorService {
     }
   }
 
-  private createProductText(product: Product): string {
-    const specifications = Object.entries(product.specifications)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(', ')
+  private async createProductText(product: Product, categoryName?: string): Promise<string> {
+    // Format specifications in a more natural way
+    const specDescriptions = Object.entries(product.specifications).map(([key, value]) => {
+      switch(key) {
+        case 'power-type':
+          return `funciona con energía ${value}`
+        case 'cutting-width':
+          return `tiene un ancho de corte de ${value}cm`
+        case 'self-propelled':
+          return value === 'sí' ? 'es autopropulsado' : 'requiere empuje manual'
+        case 'grass-collection':
+          return `sistema de recolección: ${value}`
+        case 'capacity':
+          return `capacidad de ${value} litros`
+        case 'spray-type':
+          return `tipo de pulverización: ${value}`
+        case 'pressure-type':
+          return `sistema de ${value}`
+        case 'shoulder-strap':
+          return value === 'sí' ? 'incluye correa para hombro' : 'sin correa para hombro'
+        case 'power':
+          return `${value} caballos de potencia`
+        case 'fuel-type':
+          return `motor de ${value}`
+        case 'reversible':
+          return value === 'sí' ? 'con marcha atrás' : 'sin marcha atrás'
+        case 'working-width':
+          return `ancho de trabajo de ${value}cm`
+        default:
+          return `${key}: ${value}`
+      }
+    }).join('. ')
     
-    return `${product.name}. ${product.description}. ${specifications}`
+    // If category name is not provided, try to get it from Supabase
+    if (!categoryName) {
+      const { data } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('id', product.categoryId)
+        .single()
+      
+      if (data) {
+        categoryName = data.name
+      }
+    }
+
+    // Create a more natural description combining all information
+    return `Este producto es un ${product.name} de la categoría ${categoryName || 'Desconocida'}. 
+${product.description} 
+Características técnicas: ${specDescriptions}.
+Usos recomendados: ${this.getRecommendedUses(product, categoryName)}`
+  }
+
+  private getRecommendedUses(product: Product, categoryName?: string): string {
+    const uses: string[] = []
+    
+    if (categoryName?.toLowerCase().includes('cortacésped')) {
+      uses.push('mantenimiento de césped')
+      uses.push('jardinería')
+      if (product.specifications['cutting-width'] && parseInt(product.specifications['cutting-width']) > 35) {
+        uses.push('jardines medianos y grandes')
+      } else {
+        uses.push('jardines pequeños')
+      }
+    }
+    
+    if (categoryName?.toLowerCase().includes('pulverizador')) {
+      uses.push('aplicación de fertilizantes')
+      uses.push('tratamientos fitosanitarios')
+      uses.push('riego foliar')
+      if (product.specifications['capacity'] && parseInt(product.specifications['capacity']) > 5) {
+        uses.push('grandes superficies')
+      }
+    }
+    
+    if (categoryName?.toLowerCase().includes('motocultor')) {
+      uses.push('preparación de tierra')
+      uses.push('cultivo de huerto')
+      if (product.specifications['power'] && parseInt(product.specifications['power']) > 4) {
+        uses.push('trabajos intensivos')
+      }
+    }
+    
+    return uses.join(', ')
   }
 
   public async indexProduct(product: Product): Promise<void> {
     try {
-      const productText = this.createProductText(product)
+      const productText = await this.createProductText(product)
       const tokens = this.estimateTokens(productText)
       this.tokenEstimations.set(product.id, tokens)
       
@@ -144,21 +236,30 @@ export class VectorService {
     query: string,
     categoryId: string,
     limit: number = 5
-  ): Promise<Product[]> {
+  ): Promise<Array<Product & { similarity: number }>> {
     try {
-      // Generate embedding for the query (not cached)
-      const queryEmbedding = await this.generateEmbedding(query, true)
+      // Enhance the query with context
+      const enhancedQuery = await this.enhanceQuery(query, categoryId)
+      
+      // Generate embedding for the enhanced query (not cached)
+      const queryEmbedding = await this.generateEmbedding(enhancedQuery, true)
 
       // Perform vector similarity search in Supabase
       const { data, error } = await supabase.rpc('match_products', {
         query_embedding: queryEmbedding,
-        category_id: categoryId,
-        match_threshold: 0.7,
+        search_category_id: categoryId,
+        match_threshold: 0.65,
         match_count: limit
       })
 
       if (error) {
+        console.error('Supabase RPC error:', error)
         throw error
+      }
+
+      if (!data || data.length === 0) {
+        console.log('No matches found for query:', query)
+        return []
       }
 
       return data.map((item: any) => ({
@@ -166,12 +267,29 @@ export class VectorService {
         name: item.metadata.name,
         description: item.metadata.description,
         categoryId: item.category_id,
-        specifications: item.metadata.specifications
+        specifications: item.metadata.specifications,
+        similarity: parseFloat((item.similarity * 100).toFixed(1))
       }))
     } catch (error) {
       console.error('Error searching similar products:', error)
       throw error
     }
+  }
+
+  private async enhanceQuery(query: string, categoryId: string): Promise<string> {
+    // Get category name
+    const { data: category } = await supabase
+      .from('categories')
+      .select('name')
+      .eq('id', categoryId)
+      .single()
+    
+    // Add category context to the query
+    if (category?.name) {
+      return `Busco ${category.name.toLowerCase()} para: ${query}`
+    }
+    
+    return query
   }
 
   public async indexAllProducts(products: Product[]): Promise<TokenEstimation> {

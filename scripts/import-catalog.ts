@@ -1,90 +1,65 @@
-import fs from 'fs'
-import path from 'path'
+import { createClient } from '@supabase/supabase-js'
 import { vectorService } from '../services/vector/service'
-import { Product } from '../types/garden'
+import { gardenService } from '../services/garden/service'
+import dotenv from 'dotenv'
+import path from 'path'
 
-interface BauhausProduct {
-  id: string
-  name: string
-  description: string
-  category: {
-    id: string
-    name: string
-    parent?: {
-      id: string
-      name: string
-    }
-  }
-  specifications: Record<string, string>
-  price: number
-  stock: number
-  images: string[]
-}
+// Load environment variables from .env.local
+const envPath = path.resolve(__dirname, '..', '.env.local')
+dotenv.config({ path: envPath })
 
-interface BauhausCatalog {
-  products: BauhausProduct[]
-  categories: {
-    id: string
-    name: string
-    parentId?: string
-    level: number
-  }[]
-}
+// Validate required environment variables
+const requiredEnvVars = [
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'TOGETHER_API_KEY'
+]
 
-function mapBauhausToProduct(bauhausProduct: BauhausProduct): Product {
-  return {
-    id: bauhausProduct.id,
-    name: bauhausProduct.name,
-    description: bauhausProduct.description,
-    categoryId: bauhausProduct.category.id,
-    specifications: bauhausProduct.specifications
-  }
-}
-
-async function main() {
-  try {
-    console.log('Starting catalog import...')
-
-    // Read the catalog file
-    const catalogPath = path.join(__dirname, '../data/Bauhaus.catalog_maquinaria.json')
-    const catalogData: BauhausCatalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'))
-
-    // Process products by category
-    const productsByCategory = new Map<string, Product[]>()
-
-    for (const product of catalogData.products) {
-      const mappedProduct = mapBauhausToProduct(product)
-      const categoryProducts = productsByCategory.get(product.category.id) || []
-      categoryProducts.push(mappedProduct)
-      productsByCategory.set(product.category.id, categoryProducts)
-    }
-
-    // Index products by category
-    for (const [categoryId, products] of productsByCategory) {
-      console.log(`Processing category ${categoryId} with ${products.length} products`)
-      await vectorService.indexAllProducts(products)
-      console.log(`Indexed ${products.length} products for category ${categoryId}`)
-    }
-
-    // Save category hierarchy for reference
-    const categoryHierarchy = catalogData.categories.map(category => ({
-      id: category.id,
-      name: category.name,
-      parentId: category.parentId,
-      level: category.level,
-      productCount: productsByCategory.get(category.id)?.length || 0
-    }))
-
-    // Save category hierarchy to a file
-    const hierarchyPath = path.join(__dirname, '../data/category-hierarchy.json')
-    fs.writeFileSync(hierarchyPath, JSON.stringify(categoryHierarchy, null, 2))
-
-    console.log('Catalog import completed successfully')
-    console.log('Category hierarchy saved to:', hierarchyPath)
-  } catch (error) {
-    console.error('Error during catalog import:', error)
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`Missing required environment variable: ${envVar}`)
     process.exit(1)
   }
 }
 
-main() 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+async function importCatalog() {
+  try {
+    console.log('Starting catalog import...')
+    
+    // Get all products from the garden service
+    const categories = gardenService.getProductCategories()
+    const products = categories.flatMap(category => 
+      gardenService.getProductsByCategory(category.id)
+    )
+
+    console.log(`Found ${products.length} products to import`)
+
+    // Index all products and get token estimation
+    const stats = await vectorService.indexAllProducts(products)
+    
+    console.log('Import completed!')
+    console.log('Statistics:')
+    console.log(`- Products processed: ${stats.productsProcessed}`)
+    console.log(`- Total tokens: ${stats.totalTokens}`)
+    console.log(`- Estimated cost: $${stats.estimatedCost.toFixed(6)}`)
+
+    // Get embedding stats
+    const embeddingStats = await vectorService.getEmbeddingStats()
+    console.log('\nEmbedding Statistics:')
+    console.log(`- Total products in database: ${embeddingStats.totalProducts}`)
+    console.log(`- Cached embeddings: ${embeddingStats.cachedEmbeddings}`)
+    console.log(`- Cache hit rate: ${embeddingStats.cacheHitRate.toFixed(2)}%`)
+    console.log(`- Estimated tokens: ${embeddingStats.estimatedTokens}`)
+    console.log(`- Estimated cost: $${embeddingStats.estimatedCost.toFixed(6)}`)
+
+  } catch (error) {
+    console.error('Error importing catalog:', error)
+    process.exit(1)
+  }
+}
+
+importCatalog() 
