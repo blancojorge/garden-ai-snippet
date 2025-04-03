@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { handleAIRequest } from '@/services/ai/handler'
+import { handleChatRequest } from '@/services/chat/service'
 import { WeatherData } from '@/types'
 
 export async function POST(request: Request) {
@@ -19,12 +19,21 @@ export async function POST(request: Request) {
     console.log('Month:', month)
     console.log('Weather:', weather)
 
-    const response = await handleAIRequest({
+    const response = await handleChatRequest({
       message,
       location,
       month,
       weather
     })
+
+    console.log('\n=== Products in API Route ===')
+    console.log('Number of products:', response.products.length)
+    console.log('First product sample:', response.products[0] ? {
+      id: response.products[0].id,
+      name: response.products[0].name,
+      price: response.products[0].price,
+      image: response.products[0].image
+    } : 'No products found')
 
     return NextResponse.json(response)
   } catch (error) {

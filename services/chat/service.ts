@@ -35,10 +35,20 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
     const aiRequest = {
       message: `${contextPrompt}\n\nPregunta del usuario: ${request.message}`,
       location: request.location,
-      month: request.month
+      month: request.month,
+      weather: request.weather
     }
     
     const response = await handleAIRequest(aiRequest)
+    
+    console.log('\n=== Products in Chat Service ===')
+    console.log('Number of products:', response.products.length)
+    console.log('First product sample:', response.products[0] ? {
+      id: response.products[0].id,
+      name: response.products[0].name,
+      price: response.products[0].price,
+      image: response.products[0].image
+    } : 'No products found')
     
     return {
       text: response.text,

@@ -96,6 +96,15 @@ export default function ChatInterface({
       }
 
       const data = await response.json()
+      console.log('\n=== Products in ChatInterface ===')
+      console.log('Number of products:', data.products?.length || 0)
+      console.log('First product sample:', data.products?.[0] ? {
+        id: data.products[0].id,
+        name: data.products[0].name,
+        price: data.products[0].price,
+        image: data.products[0].image
+      } : 'No products found')
+      
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         text: data.text,

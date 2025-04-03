@@ -102,7 +102,14 @@ Pregunta del usuario: ${request.message}`
 
     // Get products for the extracted categories
     const products = categories.flatMap(category => getProductsByCategory(category))
-    console.log('Found products:', products.length)
+    console.log('\n=== Products from AI Handler ===')
+    console.log('Number of products:', products.length)
+    console.log('First product sample:', products[0] ? {
+      id: products[0].id,
+      name: products[0].name,
+      price: products[0].price,
+      image: products[0].image
+    } : 'No products found')
 
     return {
       text: aiResponse,
