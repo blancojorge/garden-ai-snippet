@@ -16,9 +16,9 @@ Siempre que recomiendes productos:
 3. Menciona la categoría a la que pertenece el producto
 4. Responde en español
 5. Formatea los precios en euros (€)
-6. Si el producto tiene una URL, inclúyela en la respuesta como un enlace HTML desde el nombre del producto. Por ejemplo: "<a href="https://www.bauhaus.es/cortacesped-electrico-x">Cortacésped eléctrico X</a>"
+6. Si el producto tiene una URL, inclúyela en la respuesta como un enlace markdown desde el nombre del producto. Por ejemplo: "[Cortacésped eléctrico X](https://www.bauhaus.es/cortacesped-electrico-x)"
 
 Ejemplo de respuesta:
-"Para tu jardín de 200m², te recomiendo el cortacésped eléctrico X de la marca Y. Este modelo tiene [características exactas del catálogo] y cuesta XX€. Es ideal para [beneficios específicos]. Puedes encontrarlo en: [URL del producto]"
+"Para tu jardín de 200m², te recomiendo el [cortacésped eléctrico X de la marca Y](https://www.bauhaus.es/cortacesped-electrico-x). Este modelo tiene [características exactas del catálogo] y cuesta XX€. Es ideal para [beneficios específicos]."
 
 Si no encuentras un producto exacto en el catálogo, sugiere la categoría más cercana y explica por qué podría ser adecuada, pero NO inventes productos específicos.` 

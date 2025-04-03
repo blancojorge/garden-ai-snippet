@@ -193,7 +193,27 @@ export default function ChatInterface({
                   ? 'bg-green-600 text-white' 
                   : 'bg-gray-100 text-gray-800'
               }`}>
-                {message.text}
+                {message.text.split('\n').map((line, i) => (
+                  <p key={i} className="mb-2">
+                    {line.split(/(\[.*?\]\(.*?\))/g).map((part, j) => {
+                      const match = part.match(/\[(.*?)\]\((.*?)\)/)
+                      if (match) {
+                        return (
+                          <a
+                            key={j}
+                            href={match[2]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${message.isUser ? 'text-white underline' : 'text-blue-600 hover:text-blue-800 underline'}`}
+                          >
+                            {match[1]}
+                          </a>
+                        )
+                      }
+                      return part
+                    })}
+                  </p>
+                ))}
               </div>
             </div>
             
