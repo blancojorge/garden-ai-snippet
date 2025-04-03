@@ -1,5 +1,4 @@
 import React from 'react'
-import Image from 'next/image'
 import type { ProductRecommendation } from '@/types'
 
 interface ProductRecommendationProps {
@@ -9,14 +8,6 @@ interface ProductRecommendationProps {
 export default function ProductRecommendation({ products }: ProductRecommendationProps) {
   if (!products || products.length === 0) {
     return null
-  }
-
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const target = e.target as HTMLImageElement
-    // Only set the placeholder if the current src is not already the placeholder
-    if (target.src !== '/images/placeholder.jpg') {
-      target.src = '/images/placeholder.jpg'
-    }
   }
 
   return (
@@ -32,13 +23,10 @@ export default function ProductRecommendation({ products }: ProductRecommendatio
               className="block hover:opacity-90 transition-opacity"
             >
               <div className="relative h-48 w-full">
-                <Image
+                <img
                   src={product.image}
                   alt={product.name}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  onError={handleImageError}
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="p-4">

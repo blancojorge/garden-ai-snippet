@@ -2,7 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: [],
+    unoptimized: true,
+    domains: ['media.cdn.bauhaus'],
   },
   env: {
     TOGETHER_API_KEY: process.env.TOGETHER_API_KEY,
