@@ -79,4 +79,41 @@ export async function getWeatherData(lat: number, lon: number): Promise<WeatherD
     console.error('Error fetching weather data:', error)
     throw new Error('Failed to fetch weather data')
   }
+}
+
+export const WEATHER_TRANSLATIONS: { [key: string]: string } = {
+  'clear': 'Despejado',
+  'cloudy': 'Nublado',
+  'partly cloudy': 'Parcialmente nublado',
+  'overcast': 'Cubierto',
+  'rain': 'Lluvia',
+  'light rain': 'Lluvia ligera',
+  'heavy rain': 'Lluvia intensa',
+  'snow': 'Nieve',
+  'light snow': 'Nieve ligera',
+  'heavy snow': 'Nieve intensa',
+  'thunderstorm': 'Tormenta',
+  'fog': 'Niebla',
+  'mist': 'Bruma',
+  'haze': 'Calima',
+  'windy': 'Ventoso',
+  'breezy': 'Brisa',
+  'sunny': 'Soleado',
+  'mostly sunny': 'Mayormente soleado',
+  'scattered clouds': 'Nubes dispersas',
+  'broken clouds': 'Nubes rotas',
+  'showers': 'Chubascos',
+  'drizzle': 'Llovizna',
+  'freezing rain': 'Lluvia helada',
+  'sleet': 'Aguanieve',
+  'blizzard': 'Ventisca',
+  'dust': 'Polvo',
+  'smoke': 'Humo',
+  'tornado': 'Tornado',
+  'hurricane': 'Huracán',
+  'tropical storm': 'Tormenta tropical'
+}
+
+export function translateWeatherCondition(condition: string): string {
+  return WEATHER_TRANSLATIONS[condition.toLowerCase()] || condition
 } 

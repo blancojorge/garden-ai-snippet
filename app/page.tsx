@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getLocation } from '@/lib/location'
-import { getWeatherData } from '@/lib/weather'
+import { getWeatherData, translateWeatherCondition } from '@/lib/weather'
 import { generateResponse, setLLMProvider } from '@/lib/ai'
 import { getSeasonalInfo } from '@/lib/seasonal'
 import WeatherDisplay from '@/components/WeatherDisplay'
@@ -56,9 +56,8 @@ export default function Home() {
                          new Date().getHours() < 18 ? 'tarde' : 'noche'
         
         const greeting = `¡Buenos días! Soy tu asesor de maquinaria de jardinería. 
-        En ${locationData.region} estamos en ${seasonalInfo.season} y el clima está ${weatherData.condition.toLowerCase()} con ${weatherData.temperature}°C.
-        En esta época del año, algunas tareas importantes son: ${seasonalInfo.tasks.join(', ')}.
-        ¿En qué puedo ayudarte hoy?`
+        En ${locationData.region} estamos en ${seasonalInfo.season} y el clima está ${translateWeatherCondition(weatherData.condition)} con ${weatherData.temperature}°C.
+        En esta época del año, algunas tareas importantes son: ${seasonalInfo.tasks.join(', ')}.`
 
         setMessages([{ text: greeting, isUser: false }])
         setShowSuggestedQuestions(true)

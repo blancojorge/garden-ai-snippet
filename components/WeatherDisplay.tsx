@@ -1,6 +1,7 @@
 import React from 'react'
 import { FaSun, FaCloud, FaCloudRain, FaSnowflake, FaWind } from 'react-icons/fa'
 import type { WeatherData, LocationData } from '@/types'
+import { translateWeatherCondition } from '@/lib/weather'
 
 interface WeatherDisplayProps {
   weather: WeatherData
@@ -41,7 +42,7 @@ const WEATHER_TRANSLATIONS: { [key: string]: string } = {
 }
 
 export default function WeatherDisplay({ weather, location }: WeatherDisplayProps) {
-  const translatedCondition = WEATHER_TRANSLATIONS[weather.condition.toLowerCase()] || weather.condition
+  const translatedCondition = translateWeatherCondition(weather.condition)
 
   const getWeatherIcon = (condition: string) => {
     switch (condition) {
