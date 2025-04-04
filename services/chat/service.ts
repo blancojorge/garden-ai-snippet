@@ -2,13 +2,7 @@ import { categoryService } from '../category/service'
 import { gardenService } from '../garden/service'
 import { getProductsByCategory, Product } from '../../lib/products'
 import { WeatherData } from '../../types/weather'
-import dotenv from 'dotenv'
-import path from 'path'
-import { SYSTEM_PROMPT } from '../ai/config'
-
-// Load environment variables
-const envPath = path.resolve(process.cwd(), '.env.local')
-dotenv.config({ path: envPath })
+import { SYSTEM_PROMPT, AI_CONFIG } from '../ai/config'
 
 // Utility function to add delay between requests
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -36,7 +30,7 @@ interface ChatResponse {
 
 export class ChatService {
   private lastRequestTime: number = 0
-  private readonly MIN_DELAY_MS = 3000 // 3 seconds
+  private readonly MIN_DELAY_MS = AI_CONFIG.minDelayMs
 
   private async ensureDelay(): Promise<void> {
     const now = Date.now()
@@ -107,14 +101,11 @@ export class ChatService {
       }));
       
       console.log('[AI] Sending request to Together API with', simplifiedProducts.length, 'products')
-      const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`
-        },
+        headers: AI_CONFIG.headers,
         body: JSON.stringify({
-          model: 'mistralai/Mixtral-8x7B-Instruct-v0.1',
+          model: AI_CONFIG.model,
           messages: [
             {
               role: 'system',
@@ -142,8 +133,8 @@ Recuerda:
    - Evita recomendar productos muy similares entre sí`
             }
           ],
-          temperature: 0.7,
-          max_tokens: 1000
+          temperature: AI_CONFIG.temperature,
+          max_tokens: AI_CONFIG.maxTokens
         })
       })
 
@@ -160,16 +151,23 @@ Recuerda:
       const data = await response.json()
       console.log('[AI] Received response from Together API')
       
-      // Extract product links from the response
-      const productLinks = data.choices[0].message.content.match(/\[([^\]]+)\]\(([^)]+)\)/g) || []
+      // Extract product links from the response with improved regex
+      const productLinks = data.choices[0].message.content.match(/\[([^\]]+)\]\((https:\/\/[^)]+)\)/g) || []
       console.log('[AI] Found', productLinks.length, 'product links in response')
+      
+      if (productLinks.length === 0) {
+        console.warn('[AI] No product links found in response. Full response:', data.choices[0].message.content)
+      }
       
       // Match products with their links and limit to 3 products
       const recommendedProducts = productLinks
         .map((link: string) => {
           // Extract the URL from the markdown link
           const urlMatch = link.match(/\]\((https:\/\/[^)]+)\)/)
-          if (!urlMatch) return null
+          if (!urlMatch) {
+            console.warn('[AI] Could not extract URL from link:', link)
+            return null
+          }
           
           const url = urlMatch[1]
           console.log('[AI] Extracted URL:', url)
@@ -205,12 +203,23 @@ Recuerda:
             }
           }
           
+          console.warn('[AI] Could not match product for link:', link)
           return null
         })
         .filter(Boolean)
         .slice(0, 3) as Product[]
       
       console.log('[AI] Successfully matched', recommendedProducts.length, 'products')
+      
+      // If no products were matched but we have a response, return the text without products
+      if (recommendedProducts.length === 0 && data.choices[0].message.content) {
+        console.log('[AI] No products matched, returning text only')
+        return {
+          text: data.choices[0].message.content,
+          products: [],
+          explanation: 'Product recommendations generated but no products could be matched from the response.'
+        }
+      }
       
       return {
         text: data.choices[0].message.content,

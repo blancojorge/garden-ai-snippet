@@ -1,11 +1,10 @@
 import { ProductCategory } from '../../types/garden'
 import catalog from '../../Bauhaus.catalog_maquinaria.json'
-import dotenv from 'dotenv'
-import path from 'path'
+import { getProductsByCategory } from '../../lib/products'
+import { SYSTEM_PROMPT, AI_CONFIG } from '../ai/config'
 
-// Load environment variables
-const envPath = path.resolve(process.cwd(), '.env.local')
-dotenv.config({ path: envPath })
+// Utility function to add delay between requests
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 export class CategoryService {
   private async getAllCategories(): Promise<ProductCategory[]> {
@@ -132,9 +131,79 @@ IMPORTANT: Return ONLY a JSON array of category IDs, with no additional text. Fo
     }
   }
 
+  private lastRequestTime: number = 0
+  private readonly MIN_DELAY_MS = AI_CONFIG.minDelayMs
+
+  private async ensureDelay(): Promise<void> {
+    const now = Date.now()
+    const timeSinceLastRequest = now - this.lastRequestTime
+    
+    if (timeSinceLastRequest < this.MIN_DELAY_MS) {
+      const waitTime = this.MIN_DELAY_MS - timeSinceLastRequest
+      console.log(`\n[Delay] Waiting ${waitTime}ms before next request...`)
+      await delay(waitTime)
+    }
+    
+    this.lastRequestTime = Date.now()
+  }
+
   async findRelevantCategories(query: string): Promise<string[]> {
-    const categories = await this.getAllCategories()
-    return this.getRelevantCategories(query, categories)
+    console.log('\n[Categories] Finding relevant categories for query:', query)
+    await this.ensureDelay()
+    
+    try {
+      const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+        method: 'POST',
+        headers: AI_CONFIG.headers,
+        body: JSON.stringify({
+          model: AI_CONFIG.model,
+          messages: [
+            {
+              role: 'system',
+              content: SYSTEM_PROMPT
+            },
+            {
+              role: 'user',
+              content: `Basándote en la siguiente consulta del usuario, identifica las categorías más relevantes de nuestro catálogo de productos de jardinería y huerto. Devuelve SOLO los nombres de las categorías, separados por comas, sin explicaciones adicionales.
+
+Consulta del usuario: "${query}"`
+            }
+          ],
+          temperature: AI_CONFIG.temperature,
+          max_tokens: AI_CONFIG.maxTokens
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        console.error('[Categories] Together API error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        })
+        throw new Error(`Together API error: ${response.status} ${response.statusText}${errorData ? ` - ${JSON.stringify(errorData)}` : ''}`)
+      }
+
+      const data = await response.json()
+      console.log('[Categories] Received response from Together API')
+      
+      // Extract categories from the response
+      const categoriesText = data.choices[0].message.content.trim()
+      const categories = categoriesText.split(',').map((category: string) => category.trim())
+      
+      console.log('[Categories] Found categories:', categories)
+      return categories
+    } catch (error) {
+      console.error('[Categories] Error finding relevant categories:', error)
+      if (error instanceof Error) {
+        console.error('[Categories] Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        })
+      }
+      return []
+    }
   }
 }
 
