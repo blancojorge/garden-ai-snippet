@@ -127,7 +127,10 @@ Recuerda:
 4. Formatear los precios en euros (€)
 5. Si el producto tiene una URL, inclúyela en la respuesta como un enlace markdown desde el nombre del producto. Por ejemplo: "[Cortacésped eléctrico X](https://www.bauhaus.es/cortacesped-electrico-x)"
    IMPORTANTE: No vuelvas a repetir el nombre del producto en el texto, solo usa el enlace markdown cuando menciones el producto.
-6. IMPORTANTE: Recomendar SOLO 3 productos como máximo
+      IMPORTANTE: El enlace markdown debe ir en el NOMBRE DEL PRODUCTO, no en ningún otro elemento del texto. Por ejemplo:
+   ❌ NO: "[Cortacéspedes eléctricos](https://www.bauhaus.es/cortacesped-electrico-x) de la marca Y"
+   ✅ SÍ: "[Cortacésped eléctrico X modelo xas24](https://www.bauhaus.es/cortacesped-electrico-x-modelo-xas24)"
+   6. IMPORTANTE: Recomendar SOLO 3 productos como máximo
 7. CRÍTICO: Asegúrate de que los 3 productos recomendados sean DIVERSOS:
    - Si la consulta es sobre una categoría específica (ej. cortacéspedes), elige productos con características diferentes (ej. diferentes tipos de motor, tamaños, precios)
    - Si la consulta es general (ej. herramientas para jardín), elige productos de DIFERENTES CATEGORÍAS (ej. un cortacésped, una podadora, una desbrozadora)
