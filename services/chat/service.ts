@@ -123,16 +123,17 @@ ${JSON.stringify(simplifiedProducts, null, 2)}
 Recuerda:
 1. Utiliza EXCLUSIVAMENTE productos que estén en el catálogo
 2. Incluir el nombre exacto del producto, precio y características
-3. Menciona la categoría a la que pertenece el producto
-4. Explicar por qué cada producto es adecuado para este caso, sin repetir los mismos motivos para cada producto
-5. Formatear los precios en euros (€)
-6. Si el producto tiene una URL, inclúyela en la respuesta como un enlace markdown desde el nombre del producto. Por ejemplo: "[Cortacésped eléctrico X](https://www.bauhaus.es/cortacesped-electrico-x)"
-7. IMPORTANTE: Recomendar SOLO 3 productos como máximo
-8. CRÍTICO: Asegúrate de que los 3 productos recomendados sean DIVERSOS:
+3. Explicar por qué cada producto es adecuado para este caso, sin repetir los mismos motivos para cada producto
+4. Formatear los precios en euros (€)
+5. Si el producto tiene una URL, inclúyela en la respuesta como un enlace markdown desde el nombre del producto. Por ejemplo: "[Cortacésped eléctrico X](https://www.bauhaus.es/cortacesped-electrico-x)"
+   IMPORTANTE: No vuelvas a repetir el nombre del producto en el texto, solo usa el enlace markdown cuando menciones el producto.
+6. IMPORTANTE: Recomendar SOLO 3 productos como máximo
+7. CRÍTICO: Asegúrate de que los 3 productos recomendados sean DIVERSOS:
    - Si la consulta es sobre una categoría específica (ej. cortacéspedes), elige productos con características diferentes (ej. diferentes tipos de motor, tamaños, precios)
    - Si la consulta es general (ej. herramientas para jardín), elige productos de DIFERENTES CATEGORÍAS (ej. un cortacésped, una podadora, una desbrozadora)
-   - Evita recomendar productos muy similares entre sí`
-            }
+   - Evita recomendar productos muy similares entre sí
+8. Incluye una reflexión final sobre la consulta del usuario, indicando que has seleccionado los 3 productos más adecuados para su caso.
+            `}
           ],
           temperature: AI_CONFIG.temperature,
           max_tokens: AI_CONFIG.maxTokens
