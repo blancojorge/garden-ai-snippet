@@ -96,19 +96,33 @@ export class CategoryService {
     // Log the query for debugging
     console.log('[Categories] Processing query:', query)
     
-    const prompt = `Given the following user query and list of product categories, analyze which categories are most relevant to the query. Return ONLY a JSON array containing the IDs of the relevant categories, with no additional text or explanation.
+    const prompt = `You are a specialized assistant for a garden and outdoor machinery store. Your task is to identify relevant product categories based on user queries.
+
+IMPORTANT CONTEXT:
+- We ONLY sell garden machinery, outdoor tools, and related accessories
+- Our catalog does NOT include: food items, clothing, electronics, vehicles, or any products outside the garden/outdoor category
+- If a query is about anything NOT related to gardens, outdoor work, or machinery, you MUST return an empty array
 
 User Query: "${query}"
 
 Available Categories:
 ${categories.map(cat => `- ${cat.name} (${cat.id}): ${cat.description}`).join('\n')}
 
-IMPORTANT: 
-1. Return ONLY a JSON array of category IDs, with no additional text. For example: ["cortacespedes-electricos", "desbrozadoras"]
-2. Prioritize categories that directly match the user's needs
-3. Include categories that are closely related to the main topic
-4. Limit the response to 3-5 most relevant categories
-5. Consider the context of the query (e.g., garden size, weather conditions, specific tasks)`
+INSTRUCTIONS:
+1. First, determine if the query is about garden machinery, outdoor tools, or related accessories
+2. If the query is about ANYTHING ELSE (food, clothing, electronics, vehicles, etc.), return an empty array []
+3. If the query is ambiguous or unclear, return an empty array []
+4. If you're unsure about relevance, return an empty array []
+5. Only if the query is clearly about garden/outdoor products, select the most relevant categories
+6. Return ONLY a JSON array of category IDs, with no additional text
+7. Limit your response to 3-5 most relevant categories
+
+Examples:
+- Query: "lawn mower" → ["cortacespedes-electricos", "cortacespedes-de-gasolina"]
+- Query: "yogur" → [] (not related to garden products)
+- Query: "bicycle" → [] (not in our catalog)
+- Query: "pruning shears" → ["tijeras-de-jardineria"]
+- Query: "computer" → [] (not related to garden products)`
 
     try {
       // Add a timestamp to prevent caching
@@ -121,7 +135,7 @@ IMPORTANT:
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful assistant that analyzes queries and returns relevant category IDs. You must ONLY return a valid JSON array of strings, with no additional text or explanation.'
+              content: 'You are a specialized assistant for a garden machinery store. You must ONLY return a valid JSON array of category IDs. If the query is not about garden products, return an empty array.'
             },
             {
               role: 'user',

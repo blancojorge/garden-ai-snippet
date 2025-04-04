@@ -95,37 +95,34 @@ export default function ChatInterface({
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: input,
-          location: location || '',
-          month,
-          weather
-        })
+      console.log('=== User Message ===')
+      console.log('Message:', input)
+      console.log('Location:', location || '')
+      console.log('Month:', month)
+      console.log('Weather:', weather)
+      
+      // Use the chat service directly instead of the API route
+      const response = await chatService.handleChatRequest({
+        message: input,
+        location: location || '',
+        month,
+        weather
       })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error en la respuesta del servidor')
-      }
-
-      const data = await response.json()
+      
       console.log('\n=== Products in ChatInterface ===')
-      console.log('Number of products:', data.products?.length || 0)
-      console.log('First product sample:', data.products?.[0] ? {
-        id: data.products[0].id,
-        name: data.products[0].name,
-        price: data.products[0].price,
-        image: data.products[0].image
+      console.log('Number of products:', response.products?.length || 0)
+      console.log('First product sample:', response.products?.[0] ? {
+        id: response.products[0].id,
+        name: response.products[0].name,
+        price: response.products[0].price,
+        image: response.products[0].image
       } : 'No products found')
       
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        text: data.text,
+        text: response.text,
         isUser: false,
-        products: data.products
+        products: response.products
       }
       setMessages(prev => [...prev, botMessage])
     } catch (error) {

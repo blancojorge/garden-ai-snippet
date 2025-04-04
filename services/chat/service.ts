@@ -186,20 +186,8 @@ export class ChatService {
         id: product.id // Include the product ID
       }));
       
-      console.log('[AI] Sending request to Together API with', simplifiedProducts.length, 'products')
-      const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
-        method: 'POST',
-        headers: AI_CONFIG.headers,
-        body: JSON.stringify({
-          model: AI_CONFIG.model,
-          messages: [
-            {
-              role: 'system',
-              content: SYSTEM_PROMPT
-            },
-            {
-              role: 'user',
-              content: `Consulta del usuario: "${userQuery}"
+      // Construir el prompt completo
+      const fullPrompt = `Consulta del usuario: "${userQuery}"
 
 Eres un experto en maquinaria de huerto y jardín de Bauhaus. Tu objetivo es ayudar a los clientes a encontrar los productos más adecuados para sus necesidades de huerto y jardinería en ${context.location} durante el mes ${context.month}${context.weather ? `, donde el clima es ${context.weather.condition}, con una temperatura de ${context.weather.temperature}°C, humedad del ${context.weather.humidity}% y viento de ${context.weather.windSpeed} km/h` : ''}.
 
@@ -219,7 +207,26 @@ Recuerda:
    - Si la consulta es general (ej. herramientas para jardín), elige productos de DIFERENTES CATEGORÍAS (ej. un cortacésped, una podadora, una desbrozadora)
    - Evita recomendar productos muy similares entre sí
 8. Incluye una reflexión final sobre la consulta del usuario, indicando que has seleccionado los 3 productos más adecuados para su caso, enfatizando en cómo se relacionan con la consulta del usuario, además de los factores que has tenido en cuenta para hacer la recomendación.
-            `}
+            `;
+      
+      // Log del prompt completo
+      console.log('[AI] Full prompt content:', fullPrompt);
+      
+      console.log('[AI] Sending request to Together API with', simplifiedProducts.length, 'products')
+      const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+        method: 'POST',
+        headers: AI_CONFIG.headers,
+        body: JSON.stringify({
+          model: AI_CONFIG.model,
+          messages: [
+            {
+              role: 'system',
+              content: SYSTEM_PROMPT
+            },
+            {
+              role: 'user',
+              content: fullPrompt
+            }
           ],
           temperature: AI_CONFIG.temperature,
           max_tokens: AI_CONFIG.maxTokens
@@ -410,10 +417,11 @@ Recuerda:
       console.log('[Workflow] Found categories:', relevantCategories)
       console.log('[Workflow] Category identification process completed')
       
+      // Si no hay categorías relevantes, pedir más contexto al usuario
       if (relevantCategories.length === 0) {
         console.log('[Workflow] No relevant categories found')
         const response = {
-          text: 'Lo siento, no pude identificar categorías relevantes para tu consulta. Por favor, intenta reformular tu pregunta.',
+          text: 'Para poder ayudarte mejor, necesito más detalles sobre tu consulta. Por favor, proporciona más información sobre lo que estás buscando.',
           products: [],
           explanation: 'No se encontraron categorías relevantes.'
         }
@@ -473,6 +481,43 @@ Recuerda:
       
       return response
     }
+  }
+
+  // Método para verificar si las categorías son realmente relevantes para la consulta
+  private async verifyCategoriesRelevance(query: string, categories: string[]): Promise<boolean> {
+    console.log('[Relevance] Verifying categories relevance for query:', query)
+    console.log('[Relevance] Categories to verify:', categories)
+    
+    // Palabras clave que indican que las categorías podrían no ser relevantes
+    const irrelevantKeywords = [
+      'sulfatar', 'viñedo', 'viña', 'pulverizar', 'fumigar', 'tratamiento', 'fitosanitario',
+      'pesticida', 'herbicida', 'fungicida', 'insecticida', 'abono', 'fertilizante', 'compost',
+      'semilla', 'siembra', 'plantar', 'cultivo', 'huerto', 'huerta', 'hortaliza', 'verdura',
+      'fruta', 'árbol', 'arbusto', 'planta', 'flor', 'jardín', 'césped', 'prado', 'pradera'
+    ]
+    
+    // Verificar si la consulta contiene palabras clave que no están relacionadas con las categorías
+    const queryContainsIrrelevantKeywords = irrelevantKeywords.some(keyword => 
+      query.toLowerCase().includes(keyword.toLowerCase())
+    )
+    
+    // Verificar si las categorías son relevantes para las palabras clave
+    const categoriesAreRelevant = categories.some(category => {
+      const categoryLower = category.toLowerCase()
+      return irrelevantKeywords.some(keyword => 
+        categoryLower.includes(keyword.toLowerCase())
+      )
+    })
+    
+    // Si la consulta contiene palabras clave irrelevantes y las categorías no son relevantes,
+    // entonces las categorías no son adecuadas para la consulta
+    const isRelevant = !(queryContainsIrrelevantKeywords && !categoriesAreRelevant)
+    
+    console.log('[Relevance] Query contains irrelevant keywords:', queryContainsIrrelevantKeywords)
+    console.log('[Relevance] Categories are relevant:', categoriesAreRelevant)
+    console.log('[Relevance] Final relevance result:', isRelevant)
+    
+    return isRelevant
   }
 }
 

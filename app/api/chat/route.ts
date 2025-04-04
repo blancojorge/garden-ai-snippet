@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { handleChatRequest } from '@/services/chat/service'
+import { chatService } from '@/services/chat/service'
 import { WeatherData } from '@/types'
 
 export async function POST(request: Request) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     console.log('Month:', month)
     console.log('Weather:', weather)
 
-    const response = await handleChatRequest({
+    const response = await chatService.handleChatRequest({
       message,
       location,
       month,

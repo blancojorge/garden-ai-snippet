@@ -6,7 +6,26 @@ import { getWeatherData, translateWeatherCondition } from '@/lib/weather'
 import { getSeasonalInfo } from '@/lib/seasonal'
 import WeatherDisplay from '@/components/WeatherDisplay'
 import ChatInterface from '@/components/ChatInterface'
-import type { ChatMessage, LocationData, WeatherData } from '@/types'
+import type { LocationData, WeatherData } from '@/types'
+import { chatService } from '@/services/chat/service'
+
+// Define a local ChatMessage type that includes products
+interface ChatProduct {
+  name: string
+  description: string
+  price: number
+  image: string
+  url: string
+  category: string
+  brand: string
+}
+
+interface ChatMessage {
+  id: string
+  text: string
+  isUser: boolean
+  products?: ChatProduct[]
+}
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
@@ -45,13 +64,44 @@ export default function Home() {
     initializeData()
   }, [])
 
-  const handleQuestionClick = (question: string) => {
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      text: question,
-      isUser: true
+  const handleQuestionClick = async (question: string) => {
+    try {
+      console.log('=== Question Click from Page ===')
+      console.log('Selected question:', question)
+      
+      // Add user message
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        text: question,
+        isUser: true
+      }
+      setMessages(prev => [...prev, userMessage])
+      
+      // Get response from chat service
+      const response = await chatService.handleChatRequest({
+        message: question,
+        location: location?.region || '',
+        month,
+        weather: weather || undefined
+      })
+      
+      // Add bot message with products if available
+      const botMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        text: response.text,
+        isUser: false,
+        products: response.products
+      }
+      setMessages(prev => [...prev, botMessage])
+    } catch (error) {
+      console.error('Error in handleQuestionClick:', error)
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        text: 'Lo siento, ha ocurrido un error al procesar tu pregunta. Por favor, inténtalo de nuevo.',
+        isUser: false
+      }
+      setMessages(prev => [...prev, errorMessage])
     }
-    setMessages(prev => [...prev, userMessage])
   }
 
   if (isLoading) {
