@@ -6,7 +6,7 @@ export const AI_CONFIG = {
   model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
   baseURL: 'https://api.together.xyz/v1',
   temperature: 0.7,
-  maxTokens: 10000, // Aumentado para evitar truncamiento
+  maxTokens: 3000, // Aumentado para evitar truncamiento
   minDelayMs: 3000, // 3 seconds between requests
   headers: {
     'Content-Type': 'application/json',
