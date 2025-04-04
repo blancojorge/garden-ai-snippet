@@ -80,17 +80,19 @@ User Query: "${query}"
 Available Categories:
 ${categories.map(cat => `- ${cat.name} (${cat.id}): ${cat.description}`).join('\n')}
 
-IMPORTANT: Return ONLY a JSON array of category IDs, with no additional text. For example: ["cortacespedes-electricos", "desbrozadoras"]`
+IMPORTANT: 
+1. Return ONLY a JSON array of category IDs, with no additional text. For example: ["cortacespedes-electricos", "desbrozadoras"]
+2. Prioritize categories that directly match the user's needs
+3. Include categories that are closely related to the main topic
+4. Limit the response to 3-5 most relevant categories
+5. Consider the context of the query (e.g., garden size, weather conditions, specific tasks)`
 
     try {
-      const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
+        headers: AI_CONFIG.headers,
         body: JSON.stringify({
-          model: 'mistralai/Mixtral-8x7B-Instruct-v0.1',
+          model: AI_CONFIG.model,
           messages: [
             {
               role: 'system',
@@ -152,47 +154,22 @@ IMPORTANT: Return ONLY a JSON array of category IDs, with no additional text. Fo
     await this.ensureDelay()
     
     try {
-      const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
-        method: 'POST',
-        headers: AI_CONFIG.headers,
-        body: JSON.stringify({
-          model: AI_CONFIG.model,
-          messages: [
-            {
-              role: 'system',
-              content: SYSTEM_PROMPT
-            },
-            {
-              role: 'user',
-              content: `Basándote en la siguiente consulta del usuario, identifica las categorías más relevantes de nuestro catálogo de productos de jardinería y huerto. Devuelve SOLO los nombres de las categorías, separados por comas, sin explicaciones adicionales.
-
-Consulta del usuario: "${query}"`
-            }
-          ],
-          temperature: AI_CONFIG.temperature,
-          max_tokens: AI_CONFIG.maxTokens
-        })
+      // Get all available categories with descriptions
+      const allCategories = await this.getAllCategories()
+      console.log(`[Categories] Found ${allCategories.length} total categories in catalog`)
+      
+      // Use the improved method to find relevant categories
+      const relevantCategoryIds = await this.getRelevantCategories(query, allCategories)
+      console.log('[Categories] AI selected category IDs:', relevantCategoryIds)
+      
+      // Convert IDs back to category names
+      const relevantCategories = relevantCategoryIds.map(id => {
+        const category = allCategories.find(c => c.id === id)
+        return category ? category.name : id
       })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        console.error('[Categories] Together API error response:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        })
-        throw new Error(`Together API error: ${response.status} ${response.statusText}${errorData ? ` - ${JSON.stringify(errorData)}` : ''}`)
-      }
-
-      const data = await response.json()
-      console.log('[Categories] Received response from Together API')
       
-      // Extract categories from the response
-      const categoriesText = data.choices[0].message.content.trim()
-      const categories = categoriesText.split(',').map((category: string) => category.trim())
-      
-      console.log('[Categories] Found categories:', categories)
-      return categories
+      console.log('[Categories] Found relevant categories:', relevantCategories)
+      return relevantCategories
     } catch (error) {
       console.error('[Categories] Error finding relevant categories:', error)
       if (error instanceof Error) {
