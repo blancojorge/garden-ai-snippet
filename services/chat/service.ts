@@ -81,10 +81,12 @@ export class ChatService {
       location: string
       month: number
       weather?: WeatherData
-    }
+    },
+    userQuery: string
   ): Promise<ChatResponse> {
     console.log('[AI] Generating product recommendations')
     console.log('[AI] Context:', context)
+    console.log('[AI] User Query:', userQuery)
     console.log('[AI] Using system prompt from config.ts')
     
     await this.ensureDelay()
@@ -114,9 +116,11 @@ export class ChatService {
             },
             {
               role: 'user',
-              content: `Eres un experto en maquinaria de huerto y jardín de Bauhaus. Tu objetivo es ayudar a los clientes a encontrar los productos más adecuados para sus necesidades de huerto y jardinería en ${context.location} durante el mes ${context.month}${context.weather ? `, donde el clima es ${context.weather.condition}, con una temperatura de ${context.weather.temperature}°C, humedad del ${context.weather.humidity}% y viento de ${context.weather.windSpeed} km/h` : ''}.
+              content: `Consulta del usuario: "${userQuery}"
 
-Por favor, analiza los siguientes productos de nuestro catálogo y recomienda los 3 más adecuados, explicando por qué son ideales para este caso específico:
+Eres un experto en maquinaria de huerto y jardín de Bauhaus. Tu objetivo es ayudar a los clientes a encontrar los productos más adecuados para sus necesidades de huerto y jardinería en ${context.location} durante el mes ${context.month}${context.weather ? `, donde el clima es ${context.weather.condition}, con una temperatura de ${context.weather.temperature}°C, humedad del ${context.weather.humidity}% y viento de ${context.weather.windSpeed} km/h` : ''}.
+
+Por favor, analiza los siguientes productos de nuestro catálogo y recomienda los 3 más adecuados para responder a la consulta del usuario, explicando por qué son ideales para este caso específico:
 
 ${JSON.stringify(simplifiedProducts, null, 2)}
 
@@ -134,7 +138,7 @@ Recuerda:
    - Si la consulta es sobre una categoría específica (ej. cortacéspedes), elige productos con características diferentes (ej. diferentes tipos de motor, tamaños, precios)
    - Si la consulta es general (ej. herramientas para jardín), elige productos de DIFERENTES CATEGORÍAS (ej. un cortacésped, una podadora, una desbrozadora)
    - Evita recomendar productos muy similares entre sí
-8. Incluye una reflexión final sobre la consulta del usuario, indicando que has seleccionado los 3 productos más adecuados para su caso.
+8. Incluye una reflexión final sobre la consulta del usuario, indicando que has seleccionado los 3 productos más adecuados para su caso, enfatizando en cómo se relacionan con la consulta del usuario, además de los factores que has tenido en cuenta para hacer la recomendación.
             `}
           ],
           temperature: AI_CONFIG.temperature,
@@ -289,7 +293,8 @@ Recuerda:
           location: request.location,
           month: request.month,
           weather: request.weather
-        }
+        },
+        request.message
       )
 
       console.log('\n=== Chat Request Completed ===')
