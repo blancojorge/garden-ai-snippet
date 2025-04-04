@@ -3,10 +3,25 @@ import { getSeasonalInfo } from '@/lib/seasonal'
 import { translateWeatherCondition } from '@/lib/weather'
 import SuggestedQuestions from './SuggestedQuestions'
 import ProductRecommendation from './ProductRecommendation'
-import type { Product } from '@/lib/products'
-import type { ChatMessage } from '@/services/chat/service'
 import type { WeatherData } from '@/types'
-import { handleChatRequest } from '@/services/chat/service'
+import { chatService } from '@/services/chat/service'
+
+interface ChatProduct {
+  name: string
+  description: string
+  price: number
+  image: string
+  url: string
+  category: string
+  brand: string
+}
+
+interface ChatMessage {
+  id: string
+  text: string
+  isUser: boolean
+  products?: ChatProduct[]
+}
 
 interface ChatInterfaceProps {
   messages: ChatMessage[]
@@ -143,7 +158,7 @@ export default function ChatInterface({
       setMessages(prev => [...prev, userMessage])
       
       console.log('Sending question to chat service...')
-      const response = await handleChatRequest({
+      const response = await chatService.handleChatRequest({
         message: question,
         location: location || '',
         month,
@@ -193,9 +208,9 @@ export default function ChatInterface({
                   ? 'bg-green-600 text-white' 
                   : 'bg-gray-100 text-gray-800'
               }`}>
-                {message.text.split('\n').map((line, i) => (
+                {message.text.split('\n').map((line: string, i: number) => (
                   <p key={i} className="mb-2">
-                    {line.split(/(\[.*?\]\(.*?\))/g).map((part, j) => {
+                    {line.split(/(\[.*?\]\(.*?\))/g).map((part: string, j: number) => {
                       const match = part.match(/\[(.*?)\]\((.*?)\)/)
                       if (match) {
                         return (

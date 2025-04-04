@@ -57,24 +57,20 @@ export function getProductsByCategory(category: string): Product[] {
   console.log('\n=== getProductsByCategory ===')
   console.log('Searching for category:', category)
   
-  // Normalize the search category
-  const normalizedCategory = category.toLowerCase().trim()
+  // Normalize the search category - remove accents and convert to lowercase
+  const normalizedCategory = category.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
   
   const products = (catalog as CatalogItem[]).filter(item => {
-    const itemCategories = item.datalayer.product.item[0]
-    console.log('\nChecking item:', {
-      name: item.schema.name,
-      categories: {
-        subCategory1: itemCategories.subCategory1,
-        subCategory2: itemCategories.subCategory2,
-        subCategory3: itemCategories.subCategory3,
-        subCategory4: itemCategories.subCategory4,
-        subCategory5: itemCategories.subCategory5,
-        subCategory6: itemCategories.subCategory6
-      }
-    })
+    // Safely access the item categories
+    const itemCategories = item.datalayer?.product?.item?.[0]
+    if (!itemCategories) {
+      return false
+    }
     
-    // Create an array of all category levels
+    // Create an array of all category levels and normalize them
     const allCategories = [
       itemCategories.subCategory1,
       itemCategories.subCategory2,
@@ -82,43 +78,36 @@ export function getProductsByCategory(category: string): Product[] {
       itemCategories.subCategory4,
       itemCategories.subCategory5,
       itemCategories.subCategory6
-    ].filter(Boolean) // Remove undefined/null values
+    ]
+      .filter(cat => cat && cat !== 'n/a') // Remove undefined/null/n/a values
+      .map(cat => cat.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')) // Remove accents
     
     // Check if any category level contains the search term
-    const matches = allCategories.some(cat => 
-      cat.toLowerCase().includes(normalizedCategory) ||
-      normalizedCategory.includes(cat.toLowerCase())
+    return allCategories.some(cat => 
+      cat.includes(normalizedCategory) ||
+      normalizedCategory.includes(cat)
     )
-    
-    console.log(`Matches category "${category}"? ${matches}`)
-    return matches
   }).map(item => {
-    console.log('\nMapping product:', {
-      name: item.schema.name,
-      description: item.schema.description,
-      price: item.schema.offers.price,
-      image: item.schema.image,
-      url: item.schema.url,
-      categories: item.datalayer.product.item[0]
-    })
-    
-    return {
-      id: item.schema.sku,
-      name: item.schema.name,
-      description: item.schema.description || '',
-      price: parseFloat(item.schema.offers.price),
-      image: item.schema.image,
-      url: item.schema.url,
-      category: item.datalayer.product.item[0].subCategory2 || item.datalayer.product.item[0].subCategory1 || '',
-      brand: item.schema.brand.name
+    // Skip items with missing required data
+    if (!item.schema || !item.datalayer?.product?.item?.[0]) {
+      return null
     }
-  })
-  
-  console.log(`Found ${products.length} products for category "${category}"`)
-  if (products.length > 0) {
-    console.log('Sample product:', JSON.stringify(products[0], null, 2))
-  }
-  
+
+    return {
+      id: item.schema.sku || '',
+      name: item.schema.name || 'Unknown',
+      description: item.schema.description || '',
+      price: parseFloat(item.schema.offers?.price || '0'),
+      image: item.schema.image || '',
+      url: item.schema.url || '',
+      category: item.datalayer.product.item[0].subCategory3 || 'Uncategorized',
+      brand: item.schema.brand?.name || 'Unknown'
+    }
+  }).filter(Boolean) as Product[] // Remove null items
+
+  console.log(`Found ${products.length} products in category "${category}"`)
   return products
 }
 

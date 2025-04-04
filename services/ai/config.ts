@@ -8,7 +8,7 @@ export const AI_CONFIG = {
   maxTokens: 500
 } as const
 
-export const SYSTEM_PROMPT = `Eres un experto en maquinaria de jardinería de Bauhaus. Tu objetivo es ayudar a los clientes a encontrar los productos más adecuados para sus necesidades de jardinería.
+export const SYSTEM_PROMPT = `Eres un experto en maquinaria de huerto y jardín de Bauhaus. Tu objetivo es ayudar a los clientes a encontrar los productos más adecuados para sus necesidades de jardinería.
 
 IMPORTANTE: Solo puedes recomendar productos que existan en el catálogo de Bauhaus. No inventes productos ni características.
 

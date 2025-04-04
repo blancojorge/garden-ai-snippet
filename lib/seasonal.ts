@@ -137,24 +137,23 @@ export const SEASONAL_DATA: SeasonalData = {
     'spring': {
       season: 'primavera',
       tasks: [
-        'Preparar el jardín para la nueva temporada',
-        'Realizar la primera siega del césped',
-        'Plantar especies resistentes',
-        'Iniciar el programa de riego',
-        'Controlar plagas emergentes'
+        'Preparar el suelo para la siembra',
+        'Plantar hortalizas de primavera',
+        'Podar árboles frutales',
+        'Primera siega del césped'
       ],
       recommendedProducts: [
-        'Cortacésped profesional',
-        'Desbrozadora profesional',
-        'Kit de herramientas básicas',
-        'Sistema de riego programable'
+        'Cortacésped',
+        'Motoazada',
+        'Tijeras de poda'
       ],
       suggestedQuestions: {
         productQuestions: [
-          '¿Qué cortacésped profesional me recomiendas?',
-          '¿Qué desbrozadora es mejor para un jardín grande?'
+          '¿Qué cortacésped poco ruidoso me recomiendas?',
+          '¿Qué necesito para dejar mi suelo en buen estado de fertilidad?',
+          '¿Cuáles son las herramientas imprescindibles para mantener mis frutales en primavera?'
         ],
-        openQuestion: '¿Qué tareas de jardinería debo realizar esta primavera?'
+        openQuestion: '¿Qué tareas de jardinería debo realizar esta primavera en Galicia?'
       }
     },
     'summer': {
@@ -234,20 +233,116 @@ export const SEASONAL_DATA: SeasonalData = {
         'Preparar el suelo para la siembra',
         'Plantar hortalizas de primavera',
         'Podar árboles frutales',
-        'Controlar la humedad del suelo',
+        'Primera siega del césped',
         'Proteger plantas de las lluvias'
       ],
       recommendedProducts: [
-        'Cortacésped eléctrico',
-        'Motosierra de poda',
-        'Pulverizador de mochila',
+        'Cortacésped',
+        'Motoazada',
+        'Tijeras de poda'
+      ],
+      suggestedQuestions: {
+        productQuestions: [
+          '¿Qué cortacésped me recomiendas para un jardín húmedo?',
+          '¿Qué necesito para dejar mi suelo en buen estado de fertilidad?',
+          '¿Cuáles son las herramientas imprescindibles para mantener mis frutales en primavera?'
+        ],
+        openQuestion: '¿Qué tareas de jardinería debo realizar esta primavera en Galicia?'
+      }
+    },
+    'summer': {
+      season: 'verano',
+      tasks: [
+        'Mantener el riego adecuado',
+        'Controlar la humedad del suelo',
+        'Proteger plantas de las lluvias intensas',
+        'Cortar el césped regularmente',
+        'Controlar plagas y enfermedades'
+      ],
+      recommendedProducts: [
+        'Sistema de riego automático',
+        'Cortacésped profesional',
+        'Pulverizador de presión',
+        'Kit de protección contra lluvia'
+      ],
+      suggestedQuestions: {
+        productQuestions: [
+          '¿Qué sistema de riego es mejor para clima húmedo?',
+          '¿Qué cortacésped profesional me recomiendas para césped húmedo?',
+          '¿Qué protección necesito para las lluvias intensas?'
+        ],
+        openQuestion: '¿Cómo mantener mi jardín en verano en Galicia?'
+      }
+    },
+    'autumn': {
+      season: 'otoño',
+      tasks: [
+        'Limpiar hojas caídas',
+        'Preparar el suelo para el invierno',
+        'Plantar bulbos de primavera',
+        'Proteger plantas sensibles',
+        'Controlar la humedad del suelo'
+      ],
+      recommendedProducts: [
+        'Soplador de hojas',
+        'Kit de herramientas de jardín',
+        'Cubiertas para plantas',
         'Sistema de drenaje'
       ],
       suggestedQuestions: {
         productQuestions: [
-          '¿Qué cortacésped eléctrico me recomiendas para un jardín húmedo?',
-          '¿Qué motosierra es más adecuada para podar en clima húmedo?',
-          '¿Qué sistema de drenaje necesito para mi jardín?'
+          '¿Qué soplador me recomiendas para hojas húmedas?',
+          '¿Qué sistema de drenaje necesito para el otoño?',
+          '¿Cómo proteger mis plantas de la humedad excesiva?'
+        ],
+        openQuestion: '¿Qué preparativos necesito para el invierno en Galicia?'
+      }
+    },
+    'winter': {
+      season: 'invierno',
+      tasks: [
+        'Proteger plantas del frío y la humedad',
+        'Mantener herramientas en buen estado',
+        'Controlar el drenaje del suelo',
+        'Realizar podas de mantenimiento',
+        'Planificar la próxima temporada'
+      ],
+      recommendedProducts: [
+        'Cubiertas para plantas',
+        'Kit de mantenimiento de herramientas',
+        'Invernadero portátil',
+        'Sistema de drenaje'
+      ],
+      suggestedQuestions: {
+        productQuestions: [
+          '¿Qué protección necesito para el clima gallego?',
+          '¿Qué sistema de drenaje es mejor para invierno?',
+          '¿Cómo mantener mis herramientas en clima húmedo?'
+        ],
+        openQuestion: '¿Qué cuidados necesita mi jardín en invierno en Galicia?'
+      }
+    }
+  },
+  'Asturias': {
+    'spring': {
+      season: 'primavera',
+      tasks: [
+        'Preparar el suelo para la siembra',
+        'Plantar hortalizas de primavera',
+        'Podar árboles frutales',
+        'Primera siega del césped',
+        'Proteger plantas de las lluvias'
+      ],
+      recommendedProducts: [
+        'Cortacésped',
+        'Motoazada',
+        'Tijeras de poda'
+      ],
+      suggestedQuestions: {
+        productQuestions: [
+          '¿Qué cortacésped me recomiendas para un jardín húmedo?',
+          '¿Qué necesito para dejar mi suelo en buen estado de fertilidad?',
+          '¿Cuáles son las herramientas imprescindibles para mantener mis frutales en primavera?'
         ],
         openQuestion: '¿Qué tareas de jardinería debo realizar esta primavera en Galicia?'
       }
