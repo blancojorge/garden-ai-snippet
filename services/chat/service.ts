@@ -17,6 +17,7 @@ interface ChatRequest {
 interface ChatResponse {
   text: string
   products: Array<{
+    id: string
     name: string
     description: string
     price: number
@@ -301,4 +302,7 @@ Recuerda:
   }
 }
 
-export const chatService = new ChatService() 
+export const chatService = new ChatService()
+
+// Export the method as a standalone function
+export const handleChatRequest = chatService.handleChatRequest.bind(chatService) 

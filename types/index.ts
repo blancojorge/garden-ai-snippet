@@ -14,6 +14,17 @@ export interface LocationData {
   }
 }
 
+export interface Product {
+  id: string
+  name: string
+  description: string
+  price: number
+  image: string
+  url: string
+  category: string
+  brand: string
+}
+
 export interface ProductRecommendation {
   id: string
   name: string
@@ -32,4 +43,10 @@ export interface ChatContext {
   location: string
   weather: string
   temperature: number
+}
+
+export interface ChatMessage {
+  id: string
+  text: string
+  isUser: boolean
 } 

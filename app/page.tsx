@@ -6,8 +6,7 @@ import { getWeatherData, translateWeatherCondition } from '@/lib/weather'
 import { getSeasonalInfo } from '@/lib/seasonal'
 import WeatherDisplay from '@/components/WeatherDisplay'
 import ChatInterface from '@/components/ChatInterface'
-import type { ChatMessage } from '@/services/chat/service'
-import type { LocationData, WeatherData } from '@/types'
+import type { ChatMessage, LocationData, WeatherData } from '@/types'
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
