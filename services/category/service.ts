@@ -72,7 +72,24 @@ export class CategoryService {
     return descriptions[category] || `Herramientas y máquinas para ${category.toLowerCase()}`
   }
 
-  private async getRelevantCategories(query: string, categories: ProductCategory[]): Promise<string[]> {
+  private lastRequestTime: number = 0
+  private readonly MIN_DELAY_MS = AI_CONFIG.minDelayMs
+
+  private async ensureDelay(): Promise<void> {
+    const now = Date.now()
+    const timeSinceLastRequest = now - this.lastRequestTime
+    
+    if (timeSinceLastRequest < this.MIN_DELAY_MS) {
+      const waitTime = this.MIN_DELAY_MS - timeSinceLastRequest
+      console.log(`\n[Delay] Waiting ${waitTime}ms before next request...`)
+      await delay(waitTime)
+    }
+    
+    this.lastRequestTime = Date.now()
+  }
+
+  async getRelevantCategories(query: string): Promise<string[]> {
+    const categories = await this.getAllCategories()
     const prompt = `Given the following user query and list of product categories, analyze which categories are most relevant to the query. Return ONLY a JSON array containing the IDs of the relevant categories, with no additional text or explanation.
 
 User Query: "${query}"
@@ -104,81 +121,31 @@ IMPORTANT:
             }
           ],
           temperature: 0.1,
-          max_tokens: 100,
-          response_format: { type: "json_object" }
+          max_tokens: 1000
         })
       })
-
-      if (!response.ok) {
-        throw new Error(`Together API error: ${response.statusText}`)
-      }
 
       const data = await response.json()
       const content = data.choices[0].message.content.trim()
       
       try {
-        const result = JSON.parse(content)
-        const categoryIds = result.categories || result
-        if (!Array.isArray(categoryIds)) {
-          throw new Error('Invalid response format')
-        }
-        return categoryIds
+        const categoryIds = JSON.parse(content)
+        console.log('[Categories] AI selected category IDs:', categoryIds)
+        
+        // Convert IDs back to category names
+        const relevantCategories = categoryIds.map((id: string) => {
+          const category = categories.find(cat => cat.id === id)
+          return category ? category.name : id
+        })
+        
+        console.log('[Categories] Found relevant categories:', relevantCategories)
+        return relevantCategories
       } catch (error) {
-        console.error('Error parsing AI response:', error)
+        console.error('[Categories] Error parsing AI response:', error)
         return []
       }
     } catch (error) {
-      console.error('Error getting relevant categories:', error)
-      return []
-    }
-  }
-
-  private lastRequestTime: number = 0
-  private readonly MIN_DELAY_MS = AI_CONFIG.minDelayMs
-
-  private async ensureDelay(): Promise<void> {
-    const now = Date.now()
-    const timeSinceLastRequest = now - this.lastRequestTime
-    
-    if (timeSinceLastRequest < this.MIN_DELAY_MS) {
-      const waitTime = this.MIN_DELAY_MS - timeSinceLastRequest
-      console.log(`\n[Delay] Waiting ${waitTime}ms before next request...`)
-      await delay(waitTime)
-    }
-    
-    this.lastRequestTime = Date.now()
-  }
-
-  async findRelevantCategories(query: string): Promise<string[]> {
-    console.log('\n[Categories] Finding relevant categories for query:', query)
-    await this.ensureDelay()
-    
-    try {
-      // Get all available categories with descriptions
-      const allCategories = await this.getAllCategories()
-      console.log(`[Categories] Found ${allCategories.length} total categories in catalog`)
-      
-      // Use the improved method to find relevant categories
-      const relevantCategoryIds = await this.getRelevantCategories(query, allCategories)
-      console.log('[Categories] AI selected category IDs:', relevantCategoryIds)
-      
-      // Convert IDs back to category names
-      const relevantCategories = relevantCategoryIds.map(id => {
-        const category = allCategories.find(c => c.id === id)
-        return category ? category.name : id
-      })
-      
-      console.log('[Categories] Found relevant categories:', relevantCategories)
-      return relevantCategories
-    } catch (error) {
-      console.error('[Categories] Error finding relevant categories:', error)
-      if (error instanceof Error) {
-        console.error('[Categories] Error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        })
-      }
+      console.error('[Categories] Error getting relevant categories:', error)
       return []
     }
   }

@@ -49,7 +49,7 @@ export class ChatService {
   private async getRelevantCategories(query: string): Promise<string[]> {
     console.log('\n[Categories] Finding relevant categories for query:', query)
     await this.ensureDelay()
-    const categories = await categoryService.findRelevantCategories(query)
+    const categories = await categoryService.getRelevantCategories(query)
     console.log('[Categories] Found categories:', categories)
     return categories
   }

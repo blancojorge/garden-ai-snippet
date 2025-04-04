@@ -51,7 +51,7 @@ async function testCategoryFilter() {
       console.log(`Query: "${query}"`)
       
       // Get relevant categories using AI
-      const relevantCategories = await categoryService.findRelevantCategories(query)
+      const relevantCategories = await categoryService.getRelevantCategories(query)
       
       console.log('\nRelevant categories:')
       if (relevantCategories.length === 0) {
