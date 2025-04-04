@@ -57,7 +57,7 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 max-w-3xl mx-auto">
+      <main className="min-h-screen max-w-3xl mx-auto">
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
@@ -68,11 +68,11 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 max-w-3xl mx-auto">
+    <main className="min-h-screen max-w-3xl mx-auto">
       <div className="container mx-auto px-4 py-8">
         <img src="https://www.bauhaus.es/_ui/bauhaus/_assets2/images/logo_without_claim.png" alt="Bauhaus Logo" className="mx-auto mb-8" />
-        <h1 className="text-4xl font-bold text-center text-red-600 mb-8">
-          Tu Asesor de Maquinaria de Jardinería
+        <h1 className="text-4xl font-bold text-center text-white mb-8">
+          Tu asesor de huerto y jardín 
         </h1>
         <div className="grid gap-8">
           <div className="bg-white rounded-lg shadow-lg p-6">

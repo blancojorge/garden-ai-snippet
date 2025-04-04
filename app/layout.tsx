@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={notoSans.className}>
-        <main className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+        <main className="min-h-screen">
           {children}
         </main>
       </body>
