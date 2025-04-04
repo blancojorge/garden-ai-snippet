@@ -89,7 +89,13 @@ export class CategoryService {
   }
 
   async getRelevantCategories(query: string): Promise<string[]> {
+    console.log('[Categories] Finding relevant categories for query:', query)
     const categories = await this.getAllCategories()
+    console.log('[Categories] Found', categories.length, 'total categories in catalog')
+    
+    // Log the query for debugging
+    console.log('[Categories] Processing query:', query)
+    
     const prompt = `Given the following user query and list of product categories, analyze which categories are most relevant to the query. Return ONLY a JSON array containing the IDs of the relevant categories, with no additional text or explanation.
 
 User Query: "${query}"
@@ -105,7 +111,9 @@ IMPORTANT:
 5. Consider the context of the query (e.g., garden size, weather conditions, specific tasks)`
 
     try {
-      const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+      // Add a timestamp to prevent caching
+      const timestamp = Date.now()
+      const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions?t=${timestamp}`, {
         method: 'POST',
         headers: AI_CONFIG.headers,
         body: JSON.stringify({

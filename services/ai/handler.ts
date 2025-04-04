@@ -94,10 +94,7 @@ IMPORTANTE: Cuando recomiendes productos, usa el formato markdown para los enlac
     console.log(prompt)
     const response = await fetch(AI_CONFIG.baseURL + '/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`
-      },
+      headers: AI_CONFIG.headers,
       body: JSON.stringify({
         model: AI_CONFIG.model,
         messages: [

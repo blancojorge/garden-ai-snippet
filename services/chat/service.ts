@@ -46,33 +46,116 @@ export class ChatService {
     this.lastRequestTime = Date.now()
   }
 
+  private logCategoryProcess(query: string, categories: string[]) {
+    console.log('\n=== Category Analysis Process ===')
+    console.log('Query:', query)
+    console.log('Timestamp:', new Date().toISOString())
+    console.log('Number of categories found:', categories.length)
+    console.log('Categories:', categories)
+    console.log('=== End Category Analysis ===\n')
+  }
+
   private async getRelevantCategories(query: string): Promise<string[]> {
     console.log('\n[Categories] Finding relevant categories for query:', query)
+    console.log('[Categories] Starting category analysis for query:', query)
+    console.log('[Categories] Query length:', query.length, 'characters')
+    
     await this.ensureDelay()
+    
+    // Force a new request to the category service
+    console.log('[Categories] Requesting categories from category service...')
     const categories = await categoryService.getRelevantCategories(query)
+    console.log('[Categories] Received response from category service')
     console.log('[Categories] Found categories:', categories)
+    
+    // Log the query and categories for debugging
+    console.log('[Categories] Query:', query)
+    console.log('[Categories] Categories:', categories)
+    console.log('[Categories] Number of categories found:', categories.length)
+    
+    if (categories.length === 0) {
+      console.log('[Categories] WARNING: No categories found for query:', query)
+    } else {
+      console.log('[Categories] Successfully identified categories for query:', query)
+    }
+    
+    // Log the category process
+    this.logCategoryProcess(query, categories)
+    
     return categories
+  }
+
+  private logProductProcess(categories: string[], products: Product[]) {
+    console.log('\n=== Product Retrieval Process ===')
+    console.log('Categories:', categories)
+    console.log('Timestamp:', new Date().toISOString())
+    console.log('Number of categories processed:', categories.length)
+    console.log('Total unique products found:', products.length)
+    console.log('Product IDs:', products.map(p => p.id))
+    console.log('Product names:', products.map(p => p.name))
+    console.log('=== End Product Retrieval ===\n')
   }
 
   private async getProductsFromCategories(categories: string[]): Promise<Product[]> {
     console.log('\n[Products] Getting products from categories:', categories)
+    console.log('[Products] Starting product retrieval process...')
+    console.log('[Products] Number of categories to process:', categories.length)
+    
     const products = new Set<Product>()
     
     for (const category of categories) {
       console.log(`[Products] Fetching products for category: ${category}`)
+      console.log(`[Products] Starting product retrieval for category: ${category}`)
+      
       const categoryProducts = getProductsByCategory(category)
       console.log(`[Products] Found ${categoryProducts.length} products in category ${category}`)
       
-      // Take only the first 10 products from each category
-      const limitedProducts = categoryProducts.slice(0, 10)
+      // Take only the first 5 products from each category to minimize token usage
+      const limitedProducts = categoryProducts.slice(0, 5)
       console.log(`[Products] Using first ${limitedProducts.length} products from category ${category}`)
       
-      limitedProducts.forEach(product => products.add(product))
+      // Log the limited products for debugging
+      limitedProducts.forEach(product => {
+        console.log(`[Products] Adding product: ${product.name} (${product.id})`)
+        products.add(product)
+      })
+      
+      console.log(`[Products] Completed product retrieval for category: ${category}`)
     }
     
     const uniqueProducts = Array.from(products)
     console.log(`[Products] Total unique products found: ${uniqueProducts.length}`)
+    console.log('[Products] Product retrieval process completed')
+    
+    // Log the product process
+    this.logProductProcess(categories, uniqueProducts)
+    
     return uniqueProducts
+  }
+
+  private logRecommendationProcess(query: string, products: Product[], recommendedProducts: Product[]) {
+    console.log('\n=== Recommendation Generation Process ===')
+    console.log('Query:', query)
+    console.log('Timestamp:', new Date().toISOString())
+    console.log('Number of products considered:', products.length)
+    console.log('Number of products recommended:', recommendedProducts.length)
+    console.log('Recommended product IDs:', recommendedProducts.map(p => p.id))
+    console.log('Recommended product names:', recommendedProducts.map(p => p.name))
+    console.log('=== End Recommendation Generation ===\n')
+  }
+
+  private logChatRequestProcess(request: ChatRequest, response: ChatResponse) {
+    console.log('\n=== Chat Request Process Summary ===')
+    console.log('Timestamp:', new Date().toISOString())
+    console.log('User Query:', request.message)
+    console.log('Location:', request.location)
+    console.log('Month:', request.month)
+    console.log('Weather:', request.weather)
+    console.log('Response Text Length:', response.text.length)
+    console.log('Number of Products Recommended:', response.products.length)
+    console.log('Product IDs:', response.products.map(p => p.id))
+    console.log('Product Names:', response.products.map(p => p.name))
+    console.log('=== End Chat Request Process ===\n')
   }
 
   private async generateProductRecommendations(
@@ -156,6 +239,10 @@ Recuerda:
       const data = await response.json()
       console.log('[AI] Received response from Together API')
       
+      // Log the full response content for debugging
+      console.log('[AI] Full response content length:', data.choices[0].message.content.length)
+      console.log('[AI] Response content preview:', data.choices[0].message.content.substring(0, 100) + '...')
+      
       // Extract product links from the response with improved regex
       const productLinks = data.choices[0].message.content.match(/\[([^\]]+)\]\((https:\/\/[^)]+)\)/g) || []
       console.log('[AI] Found', productLinks.length, 'product links in response')
@@ -216,9 +303,65 @@ Recuerda:
       
       console.log('[AI] Successfully matched', recommendedProducts.length, 'products')
       
+      // Log the recommendation process
+      this.logRecommendationProcess(userQuery, products, recommendedProducts)
+      
       // If no products were matched but we have a response, return the text without products
       if (recommendedProducts.length === 0 && data.choices[0].message.content) {
         console.log('[AI] No products matched, returning text only')
+        
+        // Try to extract product IDs directly from the text as a fallback
+        const productIdMatches = data.choices[0].message.content.match(/\/p\/(\d+)/g) || []
+        console.log('[AI] Found', productIdMatches.length, 'product ID matches in text')
+        
+        if (productIdMatches.length > 0) {
+          const fallbackProducts = productIdMatches
+            .map((match: string) => {
+              const matchResult = match.match(/\/p\/(\d+)/)
+              if (!matchResult) return null
+              const id = matchResult[1]
+              console.log('[AI] Extracted product ID from text:', id)
+              return products.find(p => p.id === id)
+            })
+            .filter(Boolean)
+            .slice(0, 3) as Product[]
+          
+          if (fallbackProducts.length > 0) {
+            console.log('[AI] Found', fallbackProducts.length, 'products using fallback method')
+            
+            // Log the recommendation process with fallback products
+            this.logRecommendationProcess(userQuery, products, fallbackProducts)
+            
+            return {
+              text: data.choices[0].message.content,
+              products: fallbackProducts,
+              explanation: 'Product recommendations generated using fallback matching method.'
+            }
+          }
+        }
+        
+        // If still no products found, try to match by product names mentioned in the text
+        console.log('[AI] Trying to match products by name in text')
+        const productNames = products.map(p => p.name)
+        const matchedProducts = productNames
+          .filter(name => data.choices[0].message.content.includes(name))
+          .map(name => products.find(p => p.name === name))
+          .filter(Boolean)
+          .slice(0, 3) as Product[]
+        
+        if (matchedProducts.length > 0) {
+          console.log('[AI] Found', matchedProducts.length, 'products by name matching')
+          
+          // Log the recommendation process with name-matched products
+          this.logRecommendationProcess(userQuery, products, matchedProducts)
+          
+          return {
+            text: data.choices[0].message.content,
+            products: matchedProducts,
+            explanation: 'Product recommendations generated by matching product names in the response.'
+          }
+        }
+        
         return {
           text: data.choices[0].message.content,
           products: [],
@@ -254,19 +397,31 @@ Recuerda:
     console.log('[Request] Location:', request.location)
     console.log('[Request] Month:', request.month)
     console.log('[Request] Weather:', request.weather)
+    console.log('[Request] Timestamp:', new Date().toISOString())
 
     try {
       // Step 1: Identify relevant categories
       console.log('\n[Workflow] Step 1: Identifying relevant categories')
+      console.log('[Workflow] Query:', request.message)
+      console.log('[Workflow] Starting category identification process...')
+      
+      // Force a new request to the category service
       const relevantCategories = await this.getRelevantCategories(request.message)
+      console.log('[Workflow] Found categories:', relevantCategories)
+      console.log('[Workflow] Category identification process completed')
       
       if (relevantCategories.length === 0) {
         console.log('[Workflow] No relevant categories found')
-        return {
+        const response = {
           text: 'Lo siento, no pude identificar categorías relevantes para tu consulta. Por favor, intenta reformular tu pregunta.',
           products: [],
           explanation: 'No se encontraron categorías relevantes.'
         }
+        
+        // Log the chat request process
+        this.logChatRequestProcess(request, response)
+        
+        return response
       }
 
       // Step 2: Get products from relevant categories
@@ -275,11 +430,16 @@ Recuerda:
       
       if (products.length === 0) {
         console.log('[Workflow] No products found in relevant categories')
-        return {
+        const response = {
           text: 'Lo siento, no encontré productos disponibles en las categorías relevantes. Por favor, intenta con otra consulta.',
           products: [],
           explanation: 'No se encontraron productos en las categorías identificadas.'
         }
+        
+        // Log the chat request process
+        this.logChatRequestProcess(request, response)
+        
+        return response
       }
 
       // Step 3: Generate product recommendations
@@ -295,14 +455,23 @@ Recuerda:
       )
 
       console.log('\n=== Chat Request Completed ===')
+      
+      // Log the chat request process
+      this.logChatRequestProcess(request, response)
+      
       return response
     } catch (error) {
       console.error('[Workflow] Error handling chat request:', error)
-      return {
+      const response = {
         text: 'Lo siento, ha ocurrido un error al procesar tu consulta. Por favor, inténtalo de nuevo.',
         products: [],
         explanation: 'Error al procesar la consulta.'
       }
+      
+      // Log the chat request process
+      this.logChatRequestProcess(request, response)
+      
+      return response
     }
   }
 }

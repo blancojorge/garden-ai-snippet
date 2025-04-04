@@ -3,6 +3,7 @@ import { Product, ProductCategory } from '../../types/garden'
 import { gardenService } from '../garden/service'
 import dotenv from 'dotenv'
 import path from 'path'
+import { AI_CONFIG } from '../ai/config'
 
 // Load environment variables
 const envPath = path.resolve(process.cwd(), '.env.local')
@@ -44,14 +45,11 @@ ${categories.map(cat => `- ${cat.name} (${cat.id}): ${cat.description}`).join('\
 IMPORTANT: Return ONLY a JSON array of category IDs, with no additional text. For example: ["cortacespedes-electricos", "desbrozadoras"]`
 
     try {
-      const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
+        headers: AI_CONFIG.headers,
         body: JSON.stringify({
-          model: 'mistralai/Mixtral-8x7B-Instruct-v0.1',
+          model: AI_CONFIG.model,
           messages: [
             {
               role: 'system',
@@ -62,8 +60,8 @@ IMPORTANT: Return ONLY a JSON array of category IDs, with no additional text. Fo
               content: prompt
             }
           ],
-          temperature: 0.1,
-          max_tokens: 100,
+          temperature: AI_CONFIG.temperature,
+          max_tokens: AI_CONFIG.maxTokens,
           response_format: { type: "json_object" }
         })
       })
@@ -100,12 +98,9 @@ IMPORTANT: Return ONLY a JSON array of category IDs, with no additional text. Fo
     }
 
     try {
-      const response = await fetch('https://api.together.xyz/v1/embeddings', {
+      const response = await fetch(`${AI_CONFIG.baseURL}/embeddings`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
+        headers: AI_CONFIG.headers,
         body: JSON.stringify({
           model: 'togethercomputer/m2-bert-80M-8k-base',
           input: text,
