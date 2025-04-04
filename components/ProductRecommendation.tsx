@@ -19,11 +19,14 @@ export default function ProductRecommendation({ products }: ProductRecommendatio
     <div className="grid grid-cols-3 gap-3">
       {products.map((product, index) => (
         <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
-          <img 
+          <a
+                href={product.url}
+                target="_blank"><img 
             src={product.image} 
             alt={product.name}
             className="w-full h-48 object-cover"
           />
+          </a>
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-2"><a
                 href={product.url}
