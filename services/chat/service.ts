@@ -102,7 +102,8 @@ export class ChatService {
         category: product.category,
         brand: product.brand,
         description: product.description || '',
-        url: product.url
+        url: product.url,
+        id: product.id // Include the product ID
       }));
       
       console.log('[AI] Sending request to Together API with', simplifiedProducts.length, 'products')
@@ -166,12 +167,44 @@ Recuerda:
       // Match products with their links and limit to 3 products
       const recommendedProducts = productLinks
         .map((link: string) => {
-          const [_, name] = link.match(/\[([^\]]+)\]/) || []
-          const product = products.find(p => p.name === name)
+          // Extract the URL from the markdown link
+          const urlMatch = link.match(/\]\((https:\/\/[^)]+)\)/)
+          if (!urlMatch) return null
+          
+          const url = urlMatch[1]
+          console.log('[AI] Extracted URL:', url)
+          
+          // Try to find the product by URL
+          const product = products.find(p => p.url === url)
           if (product) {
-            console.log('[AI] Matched product:', product.name)
+            console.log('[AI] Matched product by URL:', product.name)
             return product
           }
+          
+          // If not found by URL, try to extract the product ID from the URL
+          const idMatch = url.match(/\/p\/(\d+)/)
+          if (idMatch) {
+            const id = idMatch[1]
+            console.log('[AI] Extracted product ID from URL:', id)
+            const productById = products.find(p => p.id === id)
+            if (productById) {
+              console.log('[AI] Matched product by ID:', productById.name)
+              return productById
+            }
+          }
+          
+          // If still not found, try to match by name (fallback)
+          const nameMatch = link.match(/\[([^\]]+)\]/)
+          if (nameMatch) {
+            const name = nameMatch[1]
+            console.log('[AI] Trying to match by name:', name)
+            const productByName = products.find(p => p.name === name)
+            if (productByName) {
+              console.log('[AI] Matched product by name:', productByName.name)
+              return productByName
+            }
+          }
+          
           return null
         })
         .filter(Boolean)
